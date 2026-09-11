@@ -1,0 +1,6 @@
+{
+  "id": "pci-dss",
+  "display_name": "PCI DSS",
+  "description": "Cardholder-data handling rules that install alongside a base pack. Additive: any number of verticals may be installed together.",
+  "personas": ["analyst", "auditor"]
+}

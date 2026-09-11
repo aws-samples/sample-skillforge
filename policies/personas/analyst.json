@@ -1,0 +1,8 @@
+{
+  "display_name": "Data analyst",
+  "pack_name": "analyst-pack",
+  "prefix": "an-",
+  "description": "Skills for analysts working in the warehouse: querying, reporting, and handling data within the rules that apply to them.",
+  "router": "start-here",
+  "include_skills": ["start-here", "query-warehouse", "build-report", "handle-customer-data"]
+}

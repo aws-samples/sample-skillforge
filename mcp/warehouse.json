@@ -1,0 +1,9 @@
+{
+  "note": "The analytics warehouse. Needs a corporate SSO session, so it cannot start implicitly.",
+  "access": "restricted",
+  "loading": "opt-in",
+  "install": { "warehouse-mcp": "pipx install warehouse-mcp" },
+  "mcpServers": {
+    "warehouse-mcp": { "command": "warehouse-mcp", "args": ["serve"] }
+  }
+}

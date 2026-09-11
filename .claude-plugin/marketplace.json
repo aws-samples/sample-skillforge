@@ -1,0 +1,35 @@
+{
+  "name": "skillforge",
+  "version": "0.1.0",
+  "owner": {
+    "name": "TODO: set an owner in .claude-plugin/marketplace.json"
+  },
+  "plugins": [
+    {
+      "name": "analyst-pack",
+      "source": "./dist/analyst-pack",
+      "description": "Skills for analysts working in the warehouse: querying, reporting, and handling data within the rules that apply to them."
+    },
+    {
+      "name": "vertical-pci-dss-analyst",
+      "source": "./dist/vertical-pci-dss-analyst",
+      "description": "Cardholder-data handling rules that install alongside a base pack. Additive: any number of verticals may be installed together."
+    },
+    {
+      "name": "auditor-pack",
+      "source": "./dist/auditor-pack",
+      "description": "Skills for external auditors: reading evidence and producing findings, with no write access and no direct data access."
+    },
+    {
+      "name": "vertical-pci-dss-auditor",
+      "source": "./dist/vertical-pci-dss-auditor",
+      "description": "Cardholder-data handling rules that install alongside a base pack. Additive: any number of verticals may be installed together."
+    },
+    {
+      "name": "mcp-warehouse",
+      "source": "./dist/analyst-pack/mcp-plugins/mcp-warehouse",
+      "description": "The analytics warehouse. Needs a corporate SSO session, so it cannot start implicitly. Needs credentials, a VPN or a licence this pack cannot supply.",
+      "defaultEnabled": false
+    }
+  ]
+}

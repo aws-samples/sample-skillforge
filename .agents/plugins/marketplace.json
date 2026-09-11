@@ -1,0 +1,64 @@
+{
+  "name": "skillforge",
+  "version": "0.1.0",
+  "interface": {
+    "displayName": "skillforge"
+  },
+  "plugins": [
+    {
+      "name": "analyst-pack",
+      "source": {
+        "source": "local",
+        "path": "./dist/analyst-pack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "vertical-pci-dss-analyst",
+      "source": {
+        "source": "local",
+        "path": "./dist/vertical-pci-dss-analyst"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "auditor-pack",
+      "source": {
+        "source": "local",
+        "path": "./dist/auditor-pack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "vertical-pci-dss-auditor",
+      "source": {
+        "source": "local",
+        "path": "./dist/vertical-pci-dss-auditor"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "mcp-warehouse",
+      "source": {
+        "source": "local",
+        "path": "./dist/analyst-pack/mcp-plugins/mcp-warehouse"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    }
+  ]
+}

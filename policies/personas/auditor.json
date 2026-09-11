@@ -1,0 +1,8 @@
+{
+  "display_name": "External auditor",
+  "pack_name": "auditor-pack",
+  "prefix": "au-",
+  "description": "Skills for external auditors: reading evidence and producing findings, with no write access and no direct data access.",
+  "router": "start-here",
+  "include_skills": ["start-here", "build-report", "handle-customer-data"]
+}

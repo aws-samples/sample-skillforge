@@ -1,0 +1,8 @@
+{
+  "note": "Servers worth having connected while unused. Eager means they start with the session.",
+  "access": "open",
+  "loading": "eager",
+  "mcpServers": {
+    "sqlite-explorer": { "command": "uvx", "args": ["mcp-server-sqlite", "--db-path", "./warehouse.db"] }
+  }
+}
