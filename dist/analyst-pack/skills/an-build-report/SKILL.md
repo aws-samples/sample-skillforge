@@ -12,7 +12,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: analyst (Data analyst)
 > Pack:    analyst-pack v0.2.0
-> Source:  skill `build-report` @ 9aeadec
+> Source:  skill `build-report` @ 3d7e0fd
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Build a report

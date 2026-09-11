@@ -696,7 +696,7 @@ def main(argv: list[str] | None = None) -> int:
     if r["skipped"]:
         print(f"      skipped {r['skipped']} user-owned path(s) with colliding skill names")
     if r["removed"]:
-        print(f"      removed {r['removed']} skill(s) from the previous selection — personas swap, "
+        print(f"      removed {r['removed']} skill(s) from the previous selection; personas swap, "
               f"while the selected verticals install alongside the new persona")
     if r["agents_installed"] or r["agents_removed"] or r["agents_skipped"]:
         print(f"      agents: installed {r['agents_installed']} in {agents_dir}, removed "
@@ -709,7 +709,7 @@ def main(argv: list[str] | None = None) -> int:
     if r["mcp_deleted"] or r["mcp_restored"]:
         print(f"      mcp: removed {r['mcp_deleted']} stale Skillforge server(s), restored "
               f"{r['mcp_restored']} of your own")
-    print("      opt-in servers arrive DISABLED — enable the ones you want in Kiro's MCP panel")
+    print("      opt-in servers arrive DISABLED; enable the ones you want in Kiro's MCP panel")
     print("      restart kiro-cli and the Kiro IDE to pick it up")
     print(f"      recorded selection in {state_file}")
 
@@ -721,7 +721,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"      preserved {codex_result['agents_preserved']} user-modified agent file(s)")
         print(f"      registrations reconciled in {codex_settings}")
 
-    print(f"\nClaude Code and Codex install from the repo itself — push it, then:")
+    print("\nClaude Code and Codex install from the repo itself; push it, then:")
     print("  claude plugin marketplace add <owner>/<repo>")
     for pack in packs:
         print(f"  claude plugin install {pack.name}@{marketplace}")
@@ -742,6 +742,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nAmazon Quick: {sum(n for _, n in quick)} skill variant(s) and "
               f"{len(quick_agents)} agent definition(s) across "
               f"{', '.join(dict.fromkeys(folders))}. Import them by hand, then QUIT AND RELAUNCH "
-              f"Quick — it reads skills only at launch, so until you do the skills are installed "
+              f"Quick; it reads skills only at launch, so until you do the skills are installed "
               f"and dead.")
     return 0

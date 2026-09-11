@@ -19,6 +19,10 @@ Editable diagram sources:
 [PNG](docs/diagrams/skillforge-lifecycle.png) ·
 [PDF](docs/diagrams/skillforge-lifecycle.pdf)
 
+Repository social preview:
+[PNG](docs/social-preview/skillforge-social-preview.png) ·
+[editable SVG](docs/social-preview/skillforge-social-preview.svg)
+
 ## What Skillforge does
 
 Skillforge turns a canonical repository into a distribution matrix:

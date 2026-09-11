@@ -90,13 +90,13 @@ class BuildContractTests(unittest.TestCase):
             self.assertNotIn("<!-- /profile -->", text, skill_file)
 
         analyst = (self.root / "dist" / "analyst-pack" / "skills"
-                   / "an-build-report" / "SKILL.md").read_text()
+                   / "an-build-report" / "SKILL.md").read_text(encoding="utf-8")
         auditor = (self.root / "dist" / "auditor-pack" / "skills"
-                   / "au-build-report" / "SKILL.md").read_text()
+                   / "au-build-report" / "SKILL.md").read_text(encoding="utf-8")
         engineer = (self.root / "dist" / "engineer-pack" / "skills"
-                    / "eng-build-report" / "SKILL.md").read_text()
+                    / "eng-build-report" / "SKILL.md").read_text(encoding="utf-8")
         project_manager = (self.root / "dist" / "project-manager-pack" / "skills"
-                           / "pm-build-report" / "SKILL.md").read_text()
+                           / "pm-build-report" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Work in the warehouse, not in production", analyst)
         self.assertIn("Pull them yourself with `an-query-warehouse`", analyst)
         self.assertIn("read access to evidence, not to data", auditor)
@@ -109,11 +109,11 @@ class BuildContractTests(unittest.TestCase):
         engineering_vertical = (
             self.root / "dist" / "vertical-software-engineering-engineer" / "skills"
             / "eng-review-code-change" / "SKILL.md"
-        ).read_text()
+        ).read_text(encoding="utf-8")
         delivery_vertical = (
             self.root / "dist" / "vertical-project-delivery-project-manager" / "skills"
             / "pm-report-project-status" / "SKILL.md"
-        ).read_text()
+        ).read_text(encoding="utf-8")
         self.assertIn("`eng-design-technical-change`", engineering_vertical)
         self.assertIn(
             "> Pack:    vertical-software-engineering-engineer v0.2.0",
@@ -128,9 +128,11 @@ class BuildContractTests(unittest.TestCase):
 
     def test_claude_and_codex_marketplaces_are_complete_and_agree(self) -> None:
         claude = json.loads(
-            (self.root / ".claude-plugin" / "marketplace.json").read_text())
+            (self.root / ".claude-plugin" / "marketplace.json").read_text(
+                encoding="utf-8"))
         codex = json.loads(
-            (self.root / ".agents" / "plugins" / "marketplace.json").read_text())
+            (self.root / ".agents" / "plugins" / "marketplace.json").read_text(
+                encoding="utf-8"))
         claude_names = [entry["name"] for entry in claude["plugins"]]
         codex_names = [entry["name"] for entry in codex["plugins"]]
 
@@ -141,7 +143,8 @@ class BuildContractTests(unittest.TestCase):
             source = (self.root / entry["source"]).resolve()
             self.assertTrue(source.is_dir(), entry)
             manifest = json.loads(
-                (source / ".claude-plugin" / "plugin.json").read_text())
+                (source / ".claude-plugin" / "plugin.json").read_text(
+                    encoding="utf-8"))
             self.assertEqual(manifest["name"], entry["name"])
             self.assertEqual(manifest["author"]["name"], "Skillforge contributors")
             if "mcpServers" in manifest:
@@ -155,7 +158,8 @@ class BuildContractTests(unittest.TestCase):
     def test_kiro_mcp_contract_marks_opt_in_servers_disabled(self) -> None:
         for pack_name in ("analyst-pack", "engineer-pack"):
             config = json.loads(
-                (self.root / "dist" / pack_name / "mcp" / "kiro-mcp.json").read_text())
+                (self.root / "dist" / pack_name / "mcp" / "kiro-mcp.json").read_text(
+                    encoding="utf-8"))
             servers = config["mcpServers"]
             self.assertFalse(servers["sqlite-explorer"].get("disabled", False))
             self.assertEqual(
@@ -207,7 +211,8 @@ class BuildContractTests(unittest.TestCase):
             result, _, error = build_all(root)
             self.assertEqual(result, 0, error)
             marketplace = json.loads(
-                (root / ".claude-plugin" / "marketplace.json").read_text())
+                (root / ".claude-plugin" / "marketplace.json").read_text(
+                    encoding="utf-8"))
             names = [entry["name"] for entry in marketplace["plugins"]]
             companions = [name for name in names if name.startswith("mcp-warehouse-")]
             self.assertEqual(set(companions), {

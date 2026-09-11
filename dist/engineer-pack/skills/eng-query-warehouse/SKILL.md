@@ -10,7 +10,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: engineer (Software engineer)
 > Pack:    engineer-pack v0.2.0
-> Source:  skill `query-warehouse` @ 9aeadec
+> Source:  skill `query-warehouse` @ 3d7e0fd
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Query the warehouse

@@ -13,7 +13,8 @@ from project_support import REPO_ROOT, copy_project
 class AuthoringEvalDefinitionTests(unittest.TestCase):
     def test_eval_matrix_covers_every_harness_and_both_trigger_directions(self) -> None:
         data = json.loads(
-            (REPO_ROOT / "evals" / "skillforge-authoring.json").read_text())
+            (REPO_ROOT / "evals" / "skillforge-authoring.json").read_text(
+                encoding="utf-8"))
 
         self.assertEqual(data["skill"], "skillforge-authoring")
         self.assertEqual(data["runner"], "skillforge-authoring-v1")

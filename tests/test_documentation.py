@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import struct
 import unittest
 import xml.etree.ElementTree as ET
 
@@ -50,6 +51,22 @@ class DocumentationTests(unittest.TestCase):
         self.assertTrue(pdf.startswith(b"%PDF-"))
         self.assertGreater(len(png), 100_000)
         self.assertGreater(len(pdf), 100_000)
+
+    def test_social_preview_has_github_dimensions_and_size(self) -> None:
+        source = (
+            REPO_ROOT / "docs" / "social-preview" / "skillforge-social-preview.svg"
+        )
+        rendered = source.with_suffix(".png")
+
+        self.assertEqual(
+            ET.parse(source).getroot().tag.rsplit("}", 1)[-1],
+            "svg",
+        )
+        png = rendered.read_bytes()
+        self.assertTrue(png.startswith(b"\x89PNG\r\n\x1a\n"))
+        width, height = struct.unpack(">II", png[16:24])
+        self.assertEqual((width, height), (1280, 640))
+        self.assertLess(len(png), 1_000_000)
 
 
 if __name__ == "__main__":

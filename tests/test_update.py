@@ -86,7 +86,7 @@ class UpdateWorkflowTests(unittest.TestCase):
                 "config": str((self.codex_home / "config.toml").resolve()),
             },
         })
-        self.assertIn(str(receipt_file), output)
+        self.assertIn(str(state.receipt_path(self.project)), output)
         self.assertNotIn("token", receipt_file.read_text(encoding="utf-8").lower())
         self.assertNotIn("secret", receipt_file.read_text(encoding="utf-8").lower())
 

@@ -9,7 +9,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: engineer (Software engineer)
 > Pack:    engineer-pack v0.2.0
-> Source:  skill `handle-customer-data` @ 9aeadec
+> Source:  skill `handle-customer-data` @ 3d7e0fd
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Handling customer data

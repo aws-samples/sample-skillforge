@@ -9,7 +9,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: project-manager (Project manager)
 > Pack:    vertical-project-delivery-project-manager v0.2.0
-> Source:  skill `plan-project-delivery` @ 9aeadec
+> Source:  skill `plan-project-delivery` @ 3d7e0fd
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Plan project delivery

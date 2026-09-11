@@ -76,7 +76,9 @@ class AuthoringWorkflowTests(unittest.TestCase):
             self.assertTrue((base / "skills" / "rv-build-report" / "SKILL.md").is_file())
             self.assertTrue(
                 (vertical_pack / "skills" / "rv-card-data-scope" / "SKILL.md").is_file())
-            report = (base / "skills" / "rv-build-report" / "SKILL.md").read_text()
+            report = (
+                base / "skills" / "rv-build-report" / "SKILL.md"
+            ).read_text(encoding="utf-8")
             self.assertIn("Use approved evidence only", report)
             self.assertIn("Work from approved evidence", report)
             self.assertNotIn("<!-- profile:", report)

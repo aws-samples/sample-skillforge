@@ -313,8 +313,9 @@ def write_marketplaces(root: Path, out: Path, packs: list[str], version: str,
     instructions in one file.
     """
     entries = [{"name": p, "source": f"./{out.name}/{p}",
-                "description": json.loads((out / p / ".claude-plugin" / "plugin.json")
-                                          .read_text())["description"]}
+                "description": json.loads(
+                    (out / p / ".claude-plugin" / "plugin.json").read_text(
+                        encoding="utf-8"))["description"]}
                for p in packs]
     # Companion plugins for opt-in MCP groups, one per group, disabled by default.
     for pack in packs:
@@ -324,7 +325,8 @@ def write_marketplaces(root: Path, out: Path, packs: list[str], version: str,
                 "name": companion.name,
                 "source": f"./{out.name}/{pack}/mcp-plugins/{companion.name}",
                 "description": json.loads(
-                    (companion / ".claude-plugin" / "plugin.json").read_text())["description"],
+                    (companion / ".claude-plugin" / "plugin.json").read_text(
+                        encoding="utf-8"))["description"],
                 "defaultEnabled": False,
             })
 
@@ -372,7 +374,7 @@ def write_quick(pack: Path, version: str) -> list[str]:
             continue
         # Built packs are already resolved, so a marker here means resolution failed upstream.
         if "<!-- profile:" in text:
-            print(f"    · quick: refusing {skill.name} — it carries conditional blocks and Quick "
+            print(f"    - quick: refusing {skill.name} -- it carries conditional blocks and Quick "
                   f"has no persona to resolve against")
             continue
         head = {"name": skill.name, "description": meta.get("description", ""),
@@ -401,7 +403,7 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
     model.ROOT = root
     out = root / args.out
-    config = json.loads((root / "skillforge.json").read_text()) \
+    config = json.loads((root / "skillforge.json").read_text(encoding="utf-8")) \
         if (root / "skillforge.json").is_file() else {}
     version = config.get("version", "0.0.0")
     author = config.get("author") or {"name": "Skillforge contributors"}
@@ -428,7 +430,7 @@ def main(argv: list[str] | None = None) -> int:
             for vid in verticals:
                 v = model.load_vertical(vid, root)
                 if pid not in v.personas:
-                    print(f"    · {vid}: not declared for {pid}, skipped")
+                    print(f"    - {vid}: not declared for {pid}, skipped")
                     continue
                 rv = build_pack(persona, out, version, root, author, vertical=v)
                 built_packs.append(rv["pack"])
