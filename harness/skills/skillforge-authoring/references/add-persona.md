@@ -16,15 +16,16 @@ Start from an existing persona and provide:
     "start-here",
     "build-report",
     "handle-customer-data"
-  ]
+  ],
+  "include_agents": ["reviewer"]
 }
 ```
 
 Keep the trailing hyphen in `prefix`. Do not add an `mcp` key; server entitlement is derived from
 the resolved content included in the persona.
 
-`include_agents` exists in the model but agent generation is not implemented yet. Do not add it
-unless the request also implements and tests agent generation.
+`include_agents` is optional. Every named id must have a canonical `agents/<id>.json`; read
+`add-agent.md` before creating or changing one.
 
 ## Make existing content complete for the new persona
 
@@ -48,3 +49,4 @@ the vertical's `personas` list is an explicit compatibility statement.
 - Every declared vertical builds `dist/vertical-<vertical>-<persona>/`.
 - No resolved file contains a profile marker.
 - The persona receives only MCP groups named by its resolved base content.
+- Every included agent emits all four host grant shapes and a manifest entry.

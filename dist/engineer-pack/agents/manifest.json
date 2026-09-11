@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "pack_version": "0.2.0",
+  "persona": "engineer",
+  "agents": [
+    {
+      "source": "software-engineer",
+      "name": "eng-software-engineer",
+      "files": {
+        "claude": "agents/eng-software-engineer.md",
+        "codex": "agents/codex/eng-software-engineer.toml",
+        "kiro": "agents/kiro/eng-software-engineer.json",
+        "quick": "agents/quick/eng-software-engineer.json"
+      },
+      "grants": {
+        "claude": {
+          "tools": [
+            "Read",
+            "Grep",
+            "Glob",
+            "Edit",
+            "Write",
+            "Bash",
+            "Skill"
+          ],
+          "model": "inherit"
+        },
+        "codex": {
+          "sandbox_mode": "workspace-write",
+          "web_search": "disabled"
+        },
+        "kiro": {
+          "tools": [
+            "read",
+            "write",
+            "shell"
+          ],
+          "allowed_tools": [
+            "read"
+          ]
+        },
+        "quick": {
+          "tools": []
+        }
+      }
+    }
+  ]
+}

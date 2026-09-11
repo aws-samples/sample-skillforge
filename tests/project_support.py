@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def copy_project(destination: Path) -> Path:
     root = destination / "project"
     root.mkdir(parents=True)
-    for name in ("skills", "policies", "mcp", "harness"):
+    for name in ("skills", "agents", "policies", "mcp", "harness", "evals"):
         shutil.copytree(REPO_ROOT / name, root / name)
     for name in ("AGENTS.md", "CLAUDE.md", "skillforge.json"):
         shutil.copy2(REPO_ROOT / name, root / name)

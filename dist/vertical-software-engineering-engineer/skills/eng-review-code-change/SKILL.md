@@ -8,8 +8,8 @@ metadata:
 
 > Generated file — do not edit.
 > Persona: engineer (Software engineer)
-> Pack:    vertical-software-engineering-engineer v0.1.0
-> Source:  skill `review-code-change` @ ee70cb5
+> Pack:    vertical-software-engineering-engineer v0.2.0
+> Source:  skill `review-code-change` @ d4ba273
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Review a code change

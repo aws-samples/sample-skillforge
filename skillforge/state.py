@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 
 from . import model
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_RECEIPT = Path(".skillforge") / "install.json"
 HOSTS = ("kiro", "all")
 INSTALL_MODES = ("symlink", "copy")
@@ -24,7 +25,10 @@ class InstallReceipt:
     marketplace: str
     installed_version: str
     kiro_skills_dir: str
+    kiro_agents_dir: str
     kiro_mcp_config: str
+    codex_agents_dir: str
+    codex_config: str
     schema_version: int = SCHEMA_VERSION
 
     def to_dict(self) -> dict:
@@ -39,7 +43,12 @@ class InstallReceipt:
             "installed_version": self.installed_version,
             "kiro": {
                 "skills_dir": self.kiro_skills_dir,
+                "agents_dir": self.kiro_agents_dir,
                 "mcp_config": self.kiro_mcp_config,
+            },
+            "codex": {
+                "agents_dir": self.codex_agents_dir,
+                "config": self.codex_config,
             },
         }
 
@@ -47,10 +56,11 @@ class InstallReceipt:
     def from_dict(cls, data: object, source: Path) -> "InstallReceipt":
         if not isinstance(data, dict):
             raise model.ModelError(f"{source} must contain a JSON object")
-        if data.get("schema_version") != SCHEMA_VERSION:
+        source_version = data.get("schema_version")
+        if source_version not in (1, SCHEMA_VERSION):
             raise model.ModelError(
-                f"{source}: schema_version={data.get('schema_version')!r}; "
-                f"expected {SCHEMA_VERSION}")
+                f"{source}: schema_version={source_version!r}; "
+                f"expected 1 or {SCHEMA_VERSION}")
 
         persona = data.get("persona")
         verticals = data.get("verticals")
@@ -60,6 +70,7 @@ class InstallReceipt:
         marketplace = data.get("marketplace")
         installed_version = data.get("installed_version")
         kiro = data.get("kiro")
+        codex = data.get("codex")
 
         if not isinstance(persona, str) or not model.SLUG.match(persona):
             raise model.ModelError(f"{source}: persona must be a lowercase kebab-case string")
@@ -85,11 +96,39 @@ class InstallReceipt:
             raise model.ModelError(f"{source}: kiro must be an object")
 
         skills_dir = kiro.get("skills_dir")
+        agents_dir = kiro.get("agents_dir")
         mcp_config = kiro.get("mcp_config")
-        for label, value in (("skills_dir", skills_dir), ("mcp_config", mcp_config)):
+        if source_version == 1 and agents_dir is None and isinstance(skills_dir, str):
+            if PureWindowsPath(skills_dir).is_absolute() and not Path(skills_dir).is_absolute():
+                agents_dir = str(PureWindowsPath(skills_dir).parent / "agents")
+            else:
+                agents_dir = str(Path(skills_dir).parent / "agents")
+        for label, value in (
+            ("skills_dir", skills_dir),
+            ("agents_dir", agents_dir),
+            ("mcp_config", mcp_config),
+        ):
             if not isinstance(value, str) or not (
                     Path(value).is_absolute() or PureWindowsPath(value).is_absolute()):
                 raise model.ModelError(f"{source}: kiro.{label} must be an absolute path")
+
+        if source_version == 1 and codex is None:
+            home = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+            codex = {
+                "agents_dir": str(home / "agents"),
+                "config": str(home / "config.toml"),
+            }
+        if not isinstance(codex, dict):
+            raise model.ModelError(f"{source}: codex must be an object")
+        codex_agents = codex.get("agents_dir")
+        codex_config = codex.get("config")
+        for label, value in (
+            ("agents_dir", codex_agents),
+            ("config", codex_config),
+        ):
+            if not isinstance(value, str) or not (
+                    Path(value).is_absolute() or PureWindowsPath(value).is_absolute()):
+                raise model.ModelError(f"{source}: codex.{label} must be an absolute path")
 
         return cls(
             persona=persona,
@@ -100,7 +139,10 @@ class InstallReceipt:
             marketplace=marketplace,
             installed_version=installed_version,
             kiro_skills_dir=skills_dir,
+            kiro_agents_dir=agents_dir,
             kiro_mcp_config=mcp_config,
+            codex_agents_dir=codex_agents,
+            codex_config=codex_config,
         )
 
 

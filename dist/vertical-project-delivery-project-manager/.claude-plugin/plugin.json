@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "vertical-project-delivery-project-manager",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Planning and status-management workflows for project managers delivering a defined outcome.",
   "author": {
     "name": "Skillforge contributors"

@@ -9,8 +9,8 @@ metadata:
 
 > Generated file — do not edit.
 > Persona: analyst (Data analyst)
-> Pack:    vertical-pci-dss-analyst v0.1.0
-> Source:  skill `card-data-scope` @ ee70cb5
+> Pack:    vertical-pci-dss-analyst v0.2.0
+> Source:  skill `card-data-scope` @ d4ba273
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Is it in PCI DSS scope?

@@ -4,5 +4,6 @@
   "prefix": "pm-",
   "description": "Skills for project managers coordinating delivery, reporting status, and handling project information without claiming technical or data access they do not have.",
   "router": "start-here",
-  "include_skills": ["start-here", "build-report", "handle-customer-data"]
+  "include_skills": ["start-here", "build-report", "handle-customer-data"],
+  "include_agents": ["project-manager"]
 }

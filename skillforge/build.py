@@ -41,6 +41,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from . import agents as agent_build
 from . import model, resolve
 
 BANNER = """> Generated file — do not edit.
@@ -227,6 +228,12 @@ def build_pack(persona: model.Persona, out: Path, version: str, root: Path,
             f"persona {persona.id!r} includes skill(s) that do not exist: {missing}. A "
             f"declared-but-absent skill would ship a pack quietly missing it.")
     base_wanted = [s for s in persona.include_skills if s not in tagged]
+    available_agents = set(model.all_agent_ids(root))
+    missing_agents = sorted(set(persona.include_agents) - available_agents)
+    if missing_agents:
+        raise model.ModelError(
+            f"persona {persona.id!r} includes agent(s) that do not exist: {missing_agents}. "
+            f"Create agents/<id>.json or remove the include_agents entry.")
 
     if vertical:
         wanted = [s for s, v in tagged.items() if v == vertical.id]
@@ -253,7 +260,23 @@ def build_pack(persona: model.Persona, out: Path, version: str, root: Path,
     # vertical's servers would already be entitled through the base pack it installs beside.
     entitled: tuple[str, ...] = ()
     fragment: dict = {}
+    built_agents: list[dict] = []
     if vertical is None:
+        compatible_verticals = {
+            vid
+            for vid in model.all_vertical_ids(root)
+            if persona.id in model.load_vertical(vid, root).personas
+        }
+        agent_reference_names = list(dict.fromkeys(
+            base_wanted
+            + [name for name, vid in tagged.items() if vid in compatible_verticals]
+        ))
+        agent_mapping = {
+            name: prefixed(name, persona.prefix)
+            for name in agent_reference_names
+        }
+        built_agents = agent_build.write_pack_agents(
+            pack, persona, version, agent_mapping, root)
         entitled = model.derive_mcp_groups(persona, groups, root, resolve.resolve)
         fragment = write_mcp(pack, entitled, groups, pack_name, version, author)
 
@@ -270,6 +293,7 @@ def build_pack(persona: model.Persona, out: Path, version: str, root: Path,
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
     return {"pack": pack_name, "skills": sorted(mapping[name] for name in wanted),
+            "agents": sorted(entry["name"] for entry in built_agents),
             "mcp": list(entitled), "constraints": sorted(constraints)}
 
 
@@ -398,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
             quick = write_quick(out / r["pack"], version)
             built_packs.append(r["pack"])
             print(f"  {r['pack']:34} {len(r['skills']):3} skill(s)  "
+                  f"agents={r['agents'] or '-'}  "
                   f"mcp={r['mcp'] or '-'}  constraints={r['constraints'] or '-'}"
                   + (f"  quick={len(quick)}" if quick else ""))
             for vid in verticals:

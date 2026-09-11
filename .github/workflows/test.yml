@@ -24,6 +24,12 @@ jobs:
       - name: Validate
         run: python -m skillforge validate
 
+      - name: Run harness evals
+        run: python -m skillforge eval
+
+      - name: Prove every validation gate
+        run: python -m skillforge mutate-test
+
       - name: Test
         run: python -m unittest discover -s tests -v
 

@@ -3,4 +3,4 @@
 Four concepts: skills, personas (which SWAP), verticals (which ADD), and constraints (policy text
 written once and injected into every skill that binds it).
 """
-__version__ = "0.1.0"
+__version__ = "0.2.0"

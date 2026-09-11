@@ -243,6 +243,63 @@ class ExternalValidatorTests(unittest.TestCase):
 
     @unittest.skipUnless(
         os.environ.get("SKILLFORGE_RUN_EXTERNAL_HARNESSES") == "1"
+        and shutil.which("codex"),
+        "set SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 with the Codex CLI installed",
+    )
+    def test_codex_app_server_accepts_generated_agent_registration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_path = Path(temporary)
+            root = copy_project(temporary_path)
+            result, _, error = build_all(root)
+            self.assertEqual(result, 0, error)
+            codex_home = temporary_path / "codex-home"
+            installed = install.install_codex_agents(
+                [root / "dist" / "engineer-pack"],
+                agents_dir=codex_home / "agents",
+                config_path=codex_home / "config.toml",
+            )
+            self.assertEqual(installed["agents_installed"], 1)
+
+            checked = subprocess.run(
+                [
+                    shutil.which("codex"), "app-server",
+                ],
+                input="",
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env={**os.environ, "CODEX_HOME": str(codex_home)},
+            )
+            self.assertEqual(
+                checked.returncode, 0, checked.stdout + checked.stderr)
+
+    @unittest.skipUnless(
+        os.environ.get("SKILLFORGE_RUN_EXTERNAL_HARNESSES") == "1"
+        and shutil.which("kiro-cli"),
+        "set SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 with Kiro CLI installed",
+    )
+    def test_kiro_cli_validates_generated_agents(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = copy_project(Path(temporary))
+            result, _, error = build_all(root)
+            self.assertEqual(result, 0, error)
+            failures = []
+            for path in sorted((root / "dist").glob("*/agents/kiro/*.json")):
+                checked = subprocess.run(
+                    ["kiro-cli", "agent", "validate", "--path", str(path)],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    cwd=root,
+                )
+                if checked.returncode:
+                    failures.append(
+                        f"{path.relative_to(root)}:\n"
+                        f"{checked.stdout}{checked.stderr}")
+            self.assertEqual(failures, [])
+
+    @unittest.skipUnless(
+        os.environ.get("SKILLFORGE_RUN_EXTERNAL_HARNESSES") == "1"
         and shutil.which("claude")
         and shutil.which("codex"),
         "set SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 with Claude and Codex installed",
@@ -256,6 +313,7 @@ class ExternalValidatorTests(unittest.TestCase):
             claude_config = temporary_path / "claude-config"
             codex_home = temporary_path / "codex-home"
             kiro_skills = temporary_path / "kiro" / "skills"
+            kiro_agents = temporary_path / "kiro" / "agents"
             kiro_mcp = temporary_path / "kiro" / "settings" / "mcp.json"
             claude_config.mkdir()
             codex_home.mkdir()
@@ -263,6 +321,7 @@ class ExternalValidatorTests(unittest.TestCase):
                 "CLAUDE_CONFIG_DIR": str(claude_config),
                 "CODEX_HOME": str(codex_home),
                 "KIRO_SKILLS_DIR": str(kiro_skills),
+                "KIRO_AGENTS_DIR": str(kiro_agents),
                 "KIRO_MCP_CONFIG": str(kiro_mcp),
             }
 
@@ -317,6 +376,10 @@ class ExternalValidatorTests(unittest.TestCase):
                 "vertical-project-delivery-project-manager@project",
             })
             self.assertEqual(len(list(kiro_skills.iterdir())), 5)
+            self.assertEqual(
+                {path.name for path in kiro_agents.glob("*.json")},
+                {"pm-project-manager.json"},
+            )
 
 
 if __name__ == "__main__":

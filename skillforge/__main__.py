@@ -10,12 +10,16 @@ USAGE = """skillforge <command> [options]
   validate   run every gate against the source and the built packs
   install    install a built pack into Claude Code, Codex or Kiro
   update     rebuild and reapply the selection recorded by install
+  eval       run the checked-in harness-routing evaluation matrix
+  mutate-test  prove every validation gate rejects a representative defect
   sync-harness  synchronize the repository authoring skill for all three coding harnesses
   version    print the version
 
   python3 -m skillforge sync-harness
   python3 -m skillforge build --all --vertical all
   python3 -m skillforge validate
+  python3 -m skillforge eval
+  python3 -m skillforge mutate-test
   python3 -m skillforge install --persona analyst --vertical pci-dss
   python3 -m skillforge update
 """
@@ -35,6 +39,10 @@ def main(argv: list[str] | None = None) -> int:
         from .install import main as run
     elif command == "update":
         from .update import main as run
+    elif command == "eval":
+        from .evals import main as run
+    elif command == "mutate-test":
+        from .mutations import main as run
     elif command == "sync-harness":
         from .harness import main as run
     elif command == "version":

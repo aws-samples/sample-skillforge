@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "engineer-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Skills for software engineers designing and reviewing changes, investigating data safely, and reporting conclusions with reproducible evidence.",
   "author": {
     "name": "Skillforge contributors"

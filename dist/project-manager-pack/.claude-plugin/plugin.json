@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "project-manager-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Skills for project managers coordinating delivery, reporting status, and handling project information without claiming technical or data access they do not have.",
   "author": {
     "name": "Skillforge contributors"

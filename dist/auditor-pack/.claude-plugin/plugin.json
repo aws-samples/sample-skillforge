@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "auditor-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Skills for external auditors: reading evidence and producing findings, with no write access and no direct data access.",
   "author": {
     "name": "Skillforge contributors"

@@ -153,7 +153,11 @@ def _print_selection(receipt_file: Path, receipt: state.InstallReceipt,
     print(f"Packs:       {', '.join(pack.name for pack in packs)}")
     print(f"Install:     {receipt.install_mode}")
     print(f"Kiro skills: {receipt.kiro_skills_dir}")
+    print(f"Kiro agents: {receipt.kiro_agents_dir}")
     print(f"Kiro MCP:    {receipt.kiro_mcp_config}")
+    if receipt.host == "all":
+        print(f"Codex agents: {receipt.codex_agents_dir}")
+        print(f"Codex config: {receipt.codex_config}")
     print(f"Version:     {receipt.installed_version}")
 
 
@@ -210,13 +214,25 @@ def main(argv: list[str] | None = None) -> int:
             symlink=receipt.install_mode == "symlink",
             skills_dir=Path(receipt.kiro_skills_dir),
             mcp_config=Path(receipt.kiro_mcp_config),
+            agents_dir=Path(receipt.kiro_agents_dir),
         )
+        codex_agents = install.install_codex_agents(
+            packs,
+            agents_dir=Path(receipt.codex_agents_dir),
+            config_path=Path(receipt.codex_config),
+        ) if receipt.host == "all" else None
         updated = replace(receipt, installed_version=state.project_version(root))
         state.write(receipt_file, updated)
 
         print(
             f"\n✓ Kiro updated: {result['linked']} skill(s) installed from "
             f"{', '.join(result['packs'])}; removed {result['removed']} stale skill(s)")
+        if result["agents_installed"] or result["agents_removed"]:
+            print(f"  Kiro agents: installed {result['agents_installed']}, removed "
+                  f"{result['agents_removed']} stale")
+        if codex_agents is not None:
+            print(f"  Codex agents: installed {codex_agents['agents_installed']}, removed "
+                  f"{codex_agents['agents_removed']} stale")
         print(f"  receipt refreshed: {receipt_file}")
 
         commands = _native_commands(updated, packs)

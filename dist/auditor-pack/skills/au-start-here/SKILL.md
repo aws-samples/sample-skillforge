@@ -7,8 +7,8 @@ metadata:
 
 > Generated file — do not edit.
 > Persona: auditor (External auditor)
-> Pack:    auditor-pack v0.1.0
-> Source:  skill `start-here` @ ee70cb5
+> Pack:    auditor-pack v0.2.0
+> Source:  skill `start-here` @ d4ba273
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Start here

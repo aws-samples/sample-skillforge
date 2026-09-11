@@ -1,4 +1,4 @@
-"""The authoring model: personas, constraints, verticals, MCP groups.
+"""The authoring model: personas, agents, constraints, verticals, MCP groups.
 
 Four concepts, and the distinction between two of them is the one thing worth getting straight
 before reading anything else:
@@ -52,6 +52,12 @@ LOADING = ("eager", "opt-in")
 #: opt-in: a server that cannot start without a credential must never be switched on implicitly.
 ACCESS = ("open", "restricted")
 
+#: Agent definitions spell out every host's native grant shape. There are deliberately no grant
+#: defaults: omitting a host is how an agent quietly receives that host's broad default tool set.
+AGENT_HOSTS = ("claude", "codex", "kiro", "quick")
+CODEX_SANDBOX_MODES = ("read-only", "workspace-write", "danger-full-access")
+CODEX_WEB_SEARCH = ("disabled", "cached", "live")
+
 
 class ModelError(Exception):
     """A problem in the authoring model. Always names the file to edit."""
@@ -85,6 +91,17 @@ class Persona:
         raise AttributeError(
             "persona.mcp does not exist by design — entitlement is DERIVED from the servers this "
             "persona's own skills and agents name. Call derive_mcp_groups(persona, ...).")
+
+
+@dataclass(frozen=True)
+class Agent:
+    """One canonical agent and the explicit native grant policy for every supported host."""
+
+    id: str
+    display_name: str
+    description: str
+    instructions: str
+    grants: dict
 
 
 @dataclass(frozen=True)
@@ -148,6 +165,133 @@ def load_persona(persona_id: str, root: Path = None) -> Persona:
 
 def all_persona_ids(root: Path = None) -> list[str]:
     return sorted(p.stem for p in personas_dir(root).glob("*.json"))
+
+
+def agents_dir(root: Path = None) -> Path:
+    return (root or ROOT) / "agents"
+
+
+def all_agent_ids(root: Path = None) -> list[str]:
+    directory = agents_dir(root)
+    return sorted(path.stem for path in directory.glob("*.json")) if directory.is_dir() else []
+
+
+def _agent_string_list(value: object, label: str) -> list[str]:
+    if not isinstance(value, list) or any(
+            not isinstance(item, str) or not item.strip() for item in value):
+        raise ModelError(f"{label} must be a list of non-empty strings")
+    if len(value) != len(set(value)):
+        raise ModelError(f"{label} contains duplicates")
+    return value
+
+
+def load_agent(agent_id: str, root: Path = None) -> Agent:
+    """Load one canonical agent and reject grants a host would interpret ambiguously."""
+    if not SLUG.match(str(agent_id)):
+        raise ModelError(f"agent id {agent_id!r} is not kebab-case")
+    path = agents_dir(root) / f"{agent_id}.json"
+    data = _load(path)
+    if not isinstance(data, dict):
+        raise ModelError(f"agents/{agent_id}.json must contain a JSON object")
+
+    allowed_top = {"display_name", "description", "instructions", "grants"}
+    unknown_top = sorted(set(data) - allowed_top)
+    if unknown_top:
+        raise ModelError(f"agents/{agent_id}.json has unknown field(s) {unknown_top}")
+    missing = [key for key in allowed_top if key not in data]
+    if missing:
+        raise ModelError(f"agents/{agent_id}.json is missing {sorted(missing)}")
+    for key in ("display_name", "description", "instructions"):
+        if not isinstance(data[key], str) or not data[key].strip():
+            raise ModelError(f"agents/{agent_id}.json: {key} must be a non-empty string")
+
+    grants = data["grants"]
+    if not isinstance(grants, dict):
+        raise ModelError(f"agents/{agent_id}.json: grants must be an object")
+    missing_hosts = sorted(set(AGENT_HOSTS) - set(grants))
+    unknown_hosts = sorted(set(grants) - set(AGENT_HOSTS))
+    if missing_hosts or unknown_hosts:
+        details = []
+        if missing_hosts:
+            details.append(f"missing {missing_hosts}")
+        if unknown_hosts:
+            details.append(f"unknown {unknown_hosts}")
+        raise ModelError(
+            f"agents/{agent_id}.json: grants must name every supported host exactly once "
+            f"({'; '.join(details)})")
+    for host, grant in grants.items():
+        if not isinstance(grant, dict):
+            raise ModelError(f"agents/{agent_id}.json: grants.{host} must be an object")
+
+    claude = grants["claude"]
+    unknown = sorted(set(claude) - {"tools", "model"})
+    if unknown:
+        raise ModelError(f"agents/{agent_id}.json: grants.claude has unknown field(s) {unknown}")
+    tools = _agent_string_list(
+        claude.get("tools"), f"agents/{agent_id}.json: grants.claude.tools")
+    wildcard = [tool for tool in tools if "*" in tool]
+    if wildcard:
+        raise ModelError(
+            f"agents/{agent_id}.json: Claude tool grants must be exact names; wildcard(s) "
+            f"{wildcard} match nothing")
+    if "model" in claude and (
+            not isinstance(claude["model"], str) or not claude["model"].strip()):
+        raise ModelError(f"agents/{agent_id}.json: grants.claude.model must be a string")
+
+    codex = grants["codex"]
+    unknown = sorted(
+        set(codex) - {"sandbox_mode", "web_search", "model", "model_reasoning_effort"})
+    if unknown:
+        raise ModelError(f"agents/{agent_id}.json: grants.codex has unknown field(s) {unknown}")
+    if codex.get("sandbox_mode") not in CODEX_SANDBOX_MODES:
+        raise ModelError(
+            f"agents/{agent_id}.json: grants.codex.sandbox_mode="
+            f"{codex.get('sandbox_mode')!r} must be one of {CODEX_SANDBOX_MODES}")
+    if codex.get("web_search") not in CODEX_WEB_SEARCH:
+        raise ModelError(
+            f"agents/{agent_id}.json: grants.codex.web_search={codex.get('web_search')!r} "
+            f"must be one of {CODEX_WEB_SEARCH}")
+    for key in ("model", "model_reasoning_effort"):
+        if key in codex and (
+                not isinstance(codex[key], str) or not codex[key].strip()):
+            raise ModelError(f"agents/{agent_id}.json: grants.codex.{key} must be a string")
+
+    kiro = grants["kiro"]
+    unknown = sorted(set(kiro) - {"tools", "allowed_tools"})
+    if unknown:
+        raise ModelError(f"agents/{agent_id}.json: grants.kiro has unknown field(s) {unknown}")
+    kiro_tools = _agent_string_list(
+        kiro.get("tools"), f"agents/{agent_id}.json: grants.kiro.tools")
+    allowed_tools = _agent_string_list(
+        kiro.get("allowed_tools"), f"agents/{agent_id}.json: grants.kiro.allowed_tools")
+    not_exposed = sorted(set(allowed_tools) - set(kiro_tools))
+    if not_exposed:
+        raise ModelError(
+            f"agents/{agent_id}.json: grants.kiro.allowed_tools contains {not_exposed}, "
+            f"which grants tools the agent does not expose")
+    bad_wildcards = [
+        tool for tool in (*kiro_tools, *allowed_tools)
+        if "*" in tool and not re.fullmatch(r"@[A-Za-z0-9._-]+/\*", tool)
+    ]
+    if bad_wildcards:
+        raise ModelError(
+            f"agents/{agent_id}.json: Kiro wildcards must use the exact @server/* form; "
+            f"invalid {sorted(set(bad_wildcards))}")
+
+    quick = grants["quick"]
+    unknown = sorted(set(quick) - {"tools"})
+    if unknown:
+        raise ModelError(f"agents/{agent_id}.json: grants.quick has unknown field(s) {unknown}")
+    _agent_string_list(
+        quick.get("tools"), f"agents/{agent_id}.json: grants.quick.tools")
+
+    return Agent(
+        id=agent_id,
+        display_name=data["display_name"],
+        description=data["description"],
+        instructions=data["instructions"],
+        grants=grants,
+    )
 
 
 def load_vertical(vertical_id: str, root: Path = None) -> Vertical:
@@ -273,7 +417,11 @@ def derive_mcp_groups(persona: Persona, groups: dict[str, McpGroup],
         if d.is_dir():
             corpus.append(skill_text(d))
     for agent in persona.include_agents:
-        for path in (base / "agents").rglob(f"{agent}.md"):
-            corpus.append(path.read_text(encoding="utf-8", errors="replace"))
+        try:
+            corpus.append(load_agent(agent, base).instructions)
+        except ModelError:
+            # Validation reports a missing or malformed included agent with the source file name.
+            # MCP derivation stays total so one bad agent does not hide unrelated MCP problems.
+            continue
     text = "\n".join(resolve(c, persona.id) if resolve else c for c in corpus)
     return mcp_groups_named(text, groups)

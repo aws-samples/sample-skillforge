@@ -20,6 +20,8 @@ import re
 import sys
 from pathlib import Path
 
+from . import agents as agent_build
+from . import evals as eval_runner
 from . import harness, model, resolve
 from .build import frontmatter, prefixed
 
@@ -207,6 +209,122 @@ def check_personas(root: Path, r: Report) -> None:
                f"is the tag, not adding it to a persona.")
 
 
+def check_agents(root: Path, r: Report) -> None:
+    """Canonical agents and each host's explicit native grant policy."""
+    known_personas = set(model.all_persona_ids(root))
+    loaded: dict[str, model.Agent] = {}
+    for agent_id in model.all_agent_ids(root):
+        try:
+            agent = model.load_agent(agent_id, root)
+        except model.ModelError as exc:
+            r.fail(str(exc))
+            continue
+        loaded[agent_id] = agent
+        for problem in resolve.check(
+                agent.instructions, known_personas, f"agents/{agent_id}.json: instructions"):
+            r.fail(problem)
+
+    included: set[str] = set()
+    for persona_id in model.all_persona_ids(root):
+        try:
+            persona = model.load_persona(persona_id, root)
+        except model.ModelError:
+            continue
+        included.update(persona.include_agents)
+        missing = sorted(set(persona.include_agents) - set(loaded))
+        if missing:
+            r.fail(f"persona {persona_id!r} includes agent(s) that do not exist or are invalid: "
+                   f"{missing}")
+
+        built_names: dict[str, str] = {}
+        for agent_id in persona.include_agents:
+            name = prefixed(agent_id, persona.prefix)
+            if name in built_names:
+                r.fail(
+                    f"persona {persona_id!r} agents {built_names[name]!r} and {agent_id!r} both "
+                    f"generate {name!r}; every host would hide one of them")
+            built_names[name] = agent_id
+
+    for agent_id in sorted(set(loaded) - included):
+        r.warn(f"agents/{agent_id}.json: no persona includes it, so it reaches nobody")
+
+
+def check_evals(root: Path, r: Report) -> None:
+    """Checked-in trigger and non-trigger cases across every coding harness."""
+    for problem in eval_runner.check(root):
+        r.fail(problem)
+
+
+def _source_vertical_skills(root: Path) -> dict[str, str]:
+    tagged: dict[str, str] = {}
+    for directory in sorted((root / "skills").iterdir()):
+        md = directory / "SKILL.md"
+        if not md.is_file():
+            continue
+        meta, _ = frontmatter(md.read_text(encoding="utf-8"))
+        vertical = (meta.get("metadata") or {}).get("vertical")
+        if vertical:
+            tagged[directory.name] = vertical
+    return tagged
+
+
+def check_cross_host_collisions(root: Path, r: Report) -> None:
+    """Names that flatten together in Claude, Codex, Kiro, and Quick."""
+    tagged = _source_vertical_skills(root)
+    verticals: dict[str, model.Vertical] = {}
+    for vertical_id in model.all_vertical_ids(root):
+        try:
+            verticals[vertical_id] = model.load_vertical(vertical_id, root)
+        except model.ModelError:
+            continue
+
+    for persona_id in model.all_persona_ids(root):
+        try:
+            persona = model.load_persona(persona_id, root)
+        except model.ModelError:
+            continue
+        sources: list[tuple[str, str]] = [
+            (skill, persona.pack_name)
+            for skill in persona.include_skills
+            if skill not in tagged
+        ]
+        for vertical_id, vertical in verticals.items():
+            if persona_id not in vertical.personas:
+                continue
+            sources.extend(
+                (skill, f"vertical-{vertical_id}-{persona_id}")
+                for skill, owner in tagged.items()
+                if owner == vertical_id
+            )
+
+        seen: dict[str, tuple[str, str]] = {}
+        for source, component in sources:
+            generated = prefixed(source, persona.prefix)
+            if generated in seen:
+                prior_source, prior_component = seen[generated]
+                r.fail(
+                    f"persona {persona_id!r}: {prior_component}/{prior_source} and "
+                    f"{component}/{source} both generate skill {generated!r}. Base and all "
+                    f"compatible verticals install into one flat namespace on every host.")
+            seen[generated] = (source, component)
+
+    # Repository-local authoring skills are separate per host, but duplicate declarations inside
+    # any one host's direct-child skill directory shadow each other.
+    for host, relative in zip(("codex", "claude", "kiro"), harness.HOST_DESTINATIONS):
+        directory = root / relative.parent
+        seen: dict[str, Path] = {}
+        for md in sorted(directory.glob("*/SKILL.md")) if directory.is_dir() else []:
+            metadata, _ = frontmatter(md.read_text(encoding="utf-8"))
+            name = metadata.get("name")
+            if not name:
+                continue
+            if name in seen:
+                r.fail(
+                    f"{host}: {seen[name].relative_to(root)} and {md.relative_to(root)} both "
+                    f"declare skill {name!r}; the host can load only one")
+            seen[name] = md
+
+
 def check_mcp(root: Path, r: Report) -> None:
     """The loading model, and that every declared server is actually used by someone."""
     try:
@@ -365,6 +483,9 @@ def check_packs(root: Path, out: Path, r: Report) -> bool:
                             and reference not in allowed_references:
                         r.fail(f"{label}: references `{reference}`, which is not available from "
                                f"the base pack plus {pack.name}")
+
+        if not pack.name.startswith("vertical-"):
+            _check_built_agents(root, pack, persona, r)
         # Vertical packs ship no agents and no MCP by design.
         if pack.name.startswith("vertical-"):
             for stray in (".mcp.json", "mcp", "agents"):
@@ -372,7 +493,290 @@ def check_packs(root: Path, out: Path, r: Report) -> bool:
                     r.fail(f"{pack.name} ships {stray}, which a vertical must not: agents are a "
                            f"persona-level axis and its servers are already entitled through the "
                            f"base pack it installs beside.")
+
+    # The same persona's base pack and every compatible vertical can be installed together. Check
+    # the actual emitted names too, so a stale checked-in distribution cannot evade the source
+    # collision gate.
+    for persona_id, persona in personas.items():
+        selected = [out / persona.pack_name]
+        for vertical_id in model.all_vertical_ids(root):
+            try:
+                vertical = model.load_vertical(vertical_id, root)
+            except model.ModelError:
+                continue
+            if persona_id in vertical.personas:
+                selected.append(out / f"vertical-{vertical_id}-{persona_id}")
+        seen: dict[str, str] = {}
+        for selected_pack in selected:
+            skills = selected_pack / "skills"
+            if not skills.is_dir():
+                continue
+            for skill in sorted(path for path in skills.iterdir() if path.is_dir()):
+                if skill.name in seen:
+                    r.fail(
+                        f"built install set for persona {persona_id!r}: {seen[skill.name]} and "
+                        f"{selected_pack.name} both ship skill {skill.name!r}")
+                seen[skill.name] = selected_pack.name
+
+    _check_marketplaces(root, r)
     return True
+
+
+def _read_json(path: Path, r: Report) -> dict | None:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        r.fail(f"{path}: invalid JSON: {exc}")
+        return None
+    if not isinstance(value, dict):
+        r.fail(f"{path}: must contain a JSON object")
+        return None
+    return value
+
+
+def _check_built_agents(root: Path, pack: Path, persona: model.Persona, r: Report) -> None:
+    expected = {
+        prefixed(agent_id, persona.prefix): agent_id
+        for agent_id in persona.include_agents
+    }
+    directory = pack / "agents"
+    if not expected:
+        if directory.exists():
+            r.fail(f"{pack.name} ships agents/ but persona {persona.id!r} includes none")
+        return
+
+    manifest_path = directory / "manifest.json"
+    if not manifest_path.is_file():
+        r.fail(f"{pack.name}: agents/manifest.json is missing")
+        return
+    manifest = _read_json(manifest_path, r)
+    if manifest is None:
+        return
+    if manifest.get("schema_version") != agent_build.MANIFEST_VERSION:
+        r.fail(f"{pack.name}: agents/manifest.json has unsupported schema_version")
+    if manifest.get("persona") != persona.id:
+        r.fail(f"{pack.name}: agents/manifest.json persona must be {persona.id!r}")
+    entries = manifest.get("agents")
+    if not isinstance(entries, list):
+        r.fail(f"{pack.name}: agents/manifest.json agents must be a list")
+        return
+    names = [entry.get("name") for entry in entries if isinstance(entry, dict)]
+    if len(names) != len(set(names)):
+        r.fail(f"{pack.name}: agents/manifest.json contains duplicate agent names")
+    if set(names) != set(expected):
+        r.fail(
+            f"{pack.name}: built agents {sorted(str(name) for name in names)} do not match "
+            f"persona include_agents {sorted(expected)}")
+
+    declared_files: dict[str, set[str]] = {
+        "claude": set(), "codex": set(), "kiro": set(), "quick": set(),
+    }
+    tagged = _source_vertical_skills(root)
+    compatible_verticals: set[str] = set()
+    for vertical_id in model.all_vertical_ids(root):
+        try:
+            vertical = model.load_vertical(vertical_id, root)
+        except model.ModelError:
+            continue
+        if persona.id in vertical.personas:
+            compatible_verticals.add(vertical_id)
+    reference_names = list(dict.fromkeys(
+        [
+            skill for skill in persona.include_skills
+            if skill not in tagged
+        ]
+        + [
+            skill for skill, vertical_id in tagged.items()
+            if vertical_id in compatible_verticals
+        ]
+    ))
+    mapping = {
+        source: prefixed(source, persona.prefix)
+        for source in reference_names
+    }
+    for entry in entries:
+        if not isinstance(entry, dict):
+            r.fail(f"{pack.name}: agents/manifest.json entries must be objects")
+            continue
+        name = entry.get("name")
+        source = entry.get("source")
+        if expected.get(name) != source:
+            r.fail(f"{pack.name}: agent {name!r} has source {source!r}, expected "
+                   f"{expected.get(name)!r}")
+            continue
+        try:
+            canonical = model.load_agent(source, root)
+        except model.ModelError as exc:
+            r.fail(str(exc))
+            continue
+        if entry.get("grants") != canonical.grants:
+            r.fail(f"{pack.name}: agent {name!r} grant manifest drifted from agents/{source}.json")
+        instructions = agent_build.resolved_instructions(canonical, persona, mapping)
+
+        files = entry.get("files")
+        if not isinstance(files, dict) or set(files) != set(model.AGENT_HOSTS):
+            r.fail(f"{pack.name}: agent {name!r} must list one file for every host")
+            continue
+        resolved: dict[str, Path] = {}
+        for host, relative in files.items():
+            if not isinstance(relative, str):
+                r.fail(f"{pack.name}: agent {name!r} file for {host} must be a string")
+                continue
+            path = (pack / relative).resolve()
+            try:
+                path.relative_to(pack.resolve())
+            except ValueError:
+                r.fail(f"{pack.name}: agent {name!r} file for {host} escapes the pack")
+                continue
+            if not path.is_file():
+                r.fail(f"{pack.name}: agent {name!r} file for {host} is missing: {relative}")
+                continue
+            declared_files[host].add(relative)
+            resolved[host] = path
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            if "<!-- profile:" in text or "<!-- /profile -->" in text:
+                r.fail(f"{pack.name}: agent {name!r} for {host} ships a raw profile marker")
+
+        expected_text = {
+            "claude": agent_build.render_claude(canonical, name, instructions),
+            "codex": agent_build.render_codex(canonical, instructions),
+            "kiro": json.dumps(
+                agent_build.render_kiro(canonical, instructions), indent=2) + "\n",
+            "quick": json.dumps(
+                agent_build.render_quick(canonical, instructions), indent=2) + "\n",
+        }
+        for host, path in resolved.items():
+            try:
+                actual = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as exc:
+                r.fail(f"{pack.name}: cannot read {host} agent {name!r}: {exc}")
+                continue
+            if actual != expected_text[host]:
+                r.fail(
+                    f"{pack.name}: generated {host} agent {name!r} drifted from "
+                    f"agents/{source}.json")
+
+        claude = resolved.get("claude")
+        if claude:
+            metadata, _ = frontmatter(claude.read_text(encoding="utf-8"))
+            expected_tools = ", ".join(canonical.grants["claude"]["tools"]) or "[]"
+            if metadata.get("name") != name:
+                r.fail(f"{pack.name}: Claude agent {name!r} declares name "
+                       f"{metadata.get('name')!r}")
+            if metadata.get("tools") != expected_tools:
+                r.fail(f"{pack.name}: Claude agent {name!r} tool allowlist drifted")
+
+        codex = resolved.get("codex")
+        if codex:
+            text = codex.read_text(encoding="utf-8")
+            grant = canonical.grants["codex"]
+            for key in ("sandbox_mode", "web_search"):
+                expected_line = f"{key} = {json.dumps(grant[key])}"
+                if expected_line not in text:
+                    r.fail(f"{pack.name}: Codex agent {name!r} is missing {expected_line}")
+
+        kiro = resolved.get("kiro")
+        if kiro:
+            data = _read_json(kiro, r)
+            grant = canonical.grants["kiro"]
+            if data is not None and (
+                    data.get("tools") != grant["tools"]
+                    or data.get("allowedTools") != grant["allowed_tools"]):
+                r.fail(f"{pack.name}: Kiro agent {name!r} tool grants drifted")
+
+        quick = resolved.get("quick")
+        if quick:
+            data = _read_json(quick, r)
+            if data is not None and data.get("tools") != canonical.grants["quick"]["tools"]:
+                r.fail(f"{pack.name}: Quick agent {name!r} tool grants drifted")
+
+    actual_files = {
+        "claude": {
+            path.relative_to(pack).as_posix()
+            for path in directory.glob("*.md")
+        },
+        "codex": {
+            path.relative_to(pack).as_posix()
+            for path in (directory / "codex").glob("*.toml")
+        } if (directory / "codex").is_dir() else set(),
+        "kiro": {
+            path.relative_to(pack).as_posix()
+            for path in (directory / "kiro").glob("*.json")
+        } if (directory / "kiro").is_dir() else set(),
+        "quick": {
+            path.relative_to(pack).as_posix()
+            for path in (directory / "quick").glob("*.json")
+        } if (directory / "quick").is_dir() else set(),
+    }
+    for host in model.AGENT_HOSTS:
+        extras = sorted(actual_files[host] - declared_files[host])
+        if extras:
+            r.fail(f"{pack.name}: undeclared {host} agent file(s) {extras}")
+
+
+def _check_marketplaces(root: Path, r: Report) -> None:
+    claude_path = root / ".claude-plugin" / "marketplace.json"
+    codex_path = root / ".agents" / "plugins" / "marketplace.json"
+    missing = [
+        str(path.relative_to(root))
+        for path in (claude_path, codex_path)
+        if not path.is_file()
+    ]
+    if missing:
+        r.fail(f"built distribution is missing marketplace file(s) {missing}")
+        return
+    claude = _read_json(claude_path, r)
+    codex = _read_json(codex_path, r)
+    if claude is None or codex is None:
+        return
+    claude_entries = claude.get("plugins")
+    codex_entries = codex.get("plugins")
+    if not isinstance(claude_entries, list) or not isinstance(codex_entries, list):
+        r.fail("marketplace plugin inventories must be lists")
+        return
+    claude_names = [
+        entry.get("name") for entry in claude_entries if isinstance(entry, dict)
+    ]
+    codex_names = [
+        entry.get("name") for entry in codex_entries if isinstance(entry, dict)
+    ]
+    if len(claude_names) != len(set(claude_names)):
+        r.fail("Claude marketplace contains duplicate plugin names")
+    if len(codex_names) != len(set(codex_names)):
+        r.fail("Codex marketplace contains duplicate plugin names")
+    if claude_names != codex_names:
+        r.fail("Claude and Codex marketplaces advertise different plugin inventories")
+
+
+SOURCE_GATES = (
+    ("harness-instructions", check_harness_instructions),
+    ("skills", check_skills),
+    ("conditional-blocks", check_blocks),
+    ("personas", check_personas),
+    ("agents", check_agents),
+    ("mcp", check_mcp),
+    ("eval-cases", check_evals),
+    ("cross-host-collisions", check_cross_host_collisions),
+)
+BUILT_GATE = "built-packs"
+
+
+def gate_names() -> tuple[str, ...]:
+    return tuple(name for name, _ in SOURCE_GATES) + (BUILT_GATE,)
+
+
+def run_gate(name: str, root: Path, out: Path, report: Report) -> bool:
+    """Run one named gate. The bool says whether the gate had input to inspect."""
+    if name == BUILT_GATE:
+        return check_packs(root, out, report)
+    for gate_name, function in SOURCE_GATES:
+        if name == gate_name:
+            function(root, report)
+            return True
+    raise KeyError(name)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -386,10 +790,7 @@ def main(argv: list[str] | None = None) -> int:
     model.ROOT = root
     r = Report()
 
-    gates = [("harness-instructions", check_harness_instructions),
-             ("skills", check_skills), ("conditional-blocks", check_blocks),
-             ("personas", check_personas), ("mcp", check_mcp)]
-    for name, fn in gates:
+    for name, fn in SOURCE_GATES:
         before = len(r.errors)
         fn(root, r)
         print(f"  {'ok  ' if len(r.errors) == before else 'FAIL'}  {name}")

@@ -116,13 +116,13 @@ class BuildContractTests(unittest.TestCase):
         ).read_text()
         self.assertIn("`eng-design-technical-change`", engineering_vertical)
         self.assertIn(
-            "> Pack:    vertical-software-engineering-engineer v0.1.0",
+            "> Pack:    vertical-software-engineering-engineer v0.2.0",
             engineering_vertical,
         )
         self.assertIn("`pm-plan-project-delivery`", delivery_vertical)
         self.assertIn("`pm-build-report`", delivery_vertical)
         self.assertIn(
-            "> Pack:    vertical-project-delivery-project-manager v0.1.0",
+            "> Pack:    vertical-project-delivery-project-manager v0.2.0",
             delivery_vertical,
         )
 

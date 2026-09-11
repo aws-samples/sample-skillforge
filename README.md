@@ -6,6 +6,8 @@ personas, your own policy rules, and optional domain add-ons.
 ```bash
 python3 -m skillforge build --all --vertical all   # generate the packs
 python3 -m skillforge validate                     # every gate
+python3 -m skillforge eval                         # checked-in harness routes
+python3 -m skillforge mutate-test                  # prove every gate rejects a defect
 python3 -m skillforge install --persona analyst --vertical pci-dss
                                                    # Kiro; prints Claude Code / Codex commands
 ```
@@ -26,10 +28,15 @@ Maintain that by hand across several audiences and the artefacts multiply quickl
 the failures are silent: a server that connects and exposes nothing, a skill that ships one
 audience's rules to another, or a description the host truncated so the skill never fires.
 
-## The model — four concepts
+## The model — five concepts
 
 **Skills** are ordinary `skills/<name>/SKILL.md`, to the [Agent Skills](https://agentskills.io)
 standard. Portable by construction.
+
+**Agents** are persona-level orchestrators under `agents/<id>.json`. One definition carries
+instructions plus explicit native grants for every host: exact Claude Code tools, a Codex sandbox
+and web-search policy, Kiro `tools`/`allowedTools`, and Quick tools. There are no grant defaults; a
+missing host fails validation instead of inheriting broad access.
 
 **Personas swap.** An audience with its own rules. One source, N packs — and because two personas
 can hold *mutually exclusive* instructions for the same skill, only one may be installed at a time.
@@ -104,8 +111,13 @@ authenticated CRM connection while doing something unrelated.
 ## What the build emits
 
 ```
-dist/analyst-pack/
-  skills/an-*/                        every host
+dist/engineer-pack/
+  skills/eng-*/                       every host
+  agents/eng-*.md                     Claude Code plugin agents
+  agents/codex/eng-*.toml             Codex custom-agent profiles
+  agents/kiro/eng-*.json              Kiro custom agents
+  agents/quick/eng-*.json             Amazon Quick agent imports
+  agents/manifest.json                cross-host names and grants
   .claude-plugin/plugin.json          Claude Code manifest
   .mcp.json                           Claude Code: eager servers
   mcp-plugins/mcp-warehouse-analyst-pack/
@@ -172,12 +184,19 @@ On macOS and Linux, Kiro skills are symlinked by default. On Windows they are co
 Developer Mode or administrator symlink privileges are not required. Use `--copy` or `--symlink` to
 override the platform default. The mode actually used is recorded for later updates.
 
+Kiro agent JSON is reconciled with the selected persona. With `--host all`, Codex agent TOML and a
+marked registration block in its `config.toml` are reconciled too. Generated agent files are tracked
+by hash: a user-owned collision is skipped, and a user-modified managed file is preserved rather
+than overwritten or deleted. Claude Code agents travel inside the plugin; Quick agents remain a
+manual JSON import.
+
 ## Updating an installation
 
 Every successful install writes a non-secret receipt to `.skillforge/install.json`. The directory is
 gitignored, so the selection survives a pull without being committed. It records the persona,
-verticals, install mode, output directory, marketplace name, version, and the resolved Kiro skills
-and MCP paths. Use `--state <path>` on both `install` and `update` to keep it elsewhere.
+verticals, install mode, output directory, marketplace name, version, and the resolved Kiro and
+Codex paths: Kiro skills, agents, and MCP config; Codex agents and config. Use `--state <path>` on
+both `install` and `update` to keep it elsewhere. Version 1 receipts are migrated when read.
 
 Inspect the recorded selection without changing anything:
 
@@ -217,12 +236,14 @@ git clone <this repo> && cd skillforge
 python3 -m skillforge sync-harness --check
 python3 -m skillforge build --all --vertical all
 python3 -m skillforge validate
+python3 -m skillforge eval
+python3 -m skillforge mutate-test
 python3 -m unittest discover -s tests -v
 ```
 
 The checked-in examples now include four personas (`analyst`, `auditor`, `project-manager`, and
-`engineer`), one constraint family, three verticals, nine skills, and two MCP groups. The project
-manager pairs with `project-delivery`; the engineer pairs with `software-engineering`:
+`engineer`), two agents, one constraint family, three verticals, nine skills, and two MCP groups.
+The project manager pairs with `project-delivery`; the engineer pairs with `software-engineering`:
 
 ```bash
 python3 -m skillforge install --persona project-manager --vertical project-delivery
@@ -255,8 +276,8 @@ python3 -m skillforge sync-harness
 python3 -m skillforge sync-harness --check
 ```
 
-The skill routes persona, vertical, canonical-skill, and host-contract work to focused references so
-ordinary sessions carry only the short routing instructions.
+The skill routes persona, vertical, canonical-agent, canonical-skill, and host-contract work to
+focused references so ordinary sessions carry only the short routing instructions.
 
 ## Test layers
 
@@ -265,15 +286,21 @@ ordinary sessions carry only the short routing instructions.
 - adding a persona successfully and rejecting one missing conditional branches;
 - adding a vertical successfully and rejecting base/vertical collisions;
 - exact base and vertical skill inventories;
+- four native agent grant shapes and safe Kiro/Codex agent reconciliation;
 - resolved names, constraints and conditional blocks;
+- compatible-pack and repository-local duplicate-skill detection;
 - Claude Code and Codex marketplace agreement;
 - Kiro MCP and install/swap safety;
 - JSON receipt replay, copy-mode updates, and Windows/Unix update entry points;
 - reproducible builds and synchronized harness instructions.
 
+`python3 -m skillforge eval` executes the checked-in trigger and non-trigger matrix for Codex,
+Claude Code, and Kiro discovery. `python3 -m skillforge mutate-test` creates an isolated copy for
+each validator, injects one representative defect, and fails if that defect survives its gate.
+
 The official `skills-ref` validator runs automatically when installed. Claude Code's strict plugin
-validator plus isolated local-marketplace installs in Claude Code and Codex are opt-in external
-gates:
+validator, Codex plugin/install and app-server config checks, Kiro's native agent validator, and
+isolated local-marketplace installs are opt-in external gates:
 
 ```bash
 SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 \
@@ -281,7 +308,8 @@ SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 \
 ```
 
 Host-neutral should-trigger and should-not-trigger cases live in
-`evals/skillforge-authoring.json` for replay in clean Codex, Claude Code and Kiro workspaces.
+`evals/skillforge-authoring.json`; the deterministic runner executes them in CI, while authenticated
+model-backed checks can still be replayed in isolated Codex, Claude Code, and Kiro workspaces.
 
 ## Security
 
@@ -293,13 +321,9 @@ This project is licensed under the Apache-2.0 License.
 
 ## Status
 
-**v0.1.0, early.** Working: the model, the build, all four host shapes, both marketplaces, Quick
-variants, the Kiro installer with persona + vertical reconciliation and MCP adopt/restore, shared
-repository authoring instructions for Codex/Claude Code/Kiro, recorded cross-platform updates,
+**v0.2.0, early.** Working: the model, the build, all four host shapes, both marketplaces, Quick
+variants, generated persona agents with explicit per-host grants, Kiro and Codex agent
+reconciliation, the Kiro installer with persona + vertical reconciliation and MCP adopt/restore,
+shared repository authoring instructions for Codex/Claude Code/Kiro, recorded cross-platform
+updates, executable harness evals, cross-host duplicate detection, a full mutation harness,
 contract tests, and the validator.
-
-Not built yet: agent generation with per-host tool grants, an automated runner for the checked-in
-eval cases, cross-host duplicate-skill detection, and a full mutation harness that proves every gate
-fails when it should. Those matter — the per-host grant divergence in the table above is where most
-of the silent failures live — but skills, personas, verticals and constraints work on all four hosts
-today.

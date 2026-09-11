@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "runner": "skillforge-authoring-v1",
   "skill": "skillforge-authoring",
   "harnesses": ["codex", "claude", "kiro"],
   "cases": [

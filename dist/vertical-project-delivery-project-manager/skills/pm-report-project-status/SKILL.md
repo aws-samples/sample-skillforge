@@ -8,8 +8,8 @@ metadata:
 
 > Generated file — do not edit.
 > Persona: project-manager (Project manager)
-> Pack:    vertical-project-delivery-project-manager v0.1.0
-> Source:  skill `report-project-status` @ ee70cb5
+> Pack:    vertical-project-delivery-project-manager v0.2.0
+> Source:  skill `report-project-status` @ d4ba273
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Report project status

@@ -23,10 +23,14 @@ class UpdateWorkflowTests(unittest.TestCase):
         built, _, build_error = build_all(self.project)
         self.assertEqual(built, 0, build_error)
         self.skills_dir = self.root / "kiro" / "skills"
+        self.agents_dir = self.root / "kiro" / "agents"
         self.mcp_config = self.root / "kiro" / "settings" / "mcp.json"
+        self.codex_home = self.root / "codex"
         self.environment = patch.dict(os.environ, {
             "KIRO_SKILLS_DIR": str(self.skills_dir),
+            "KIRO_AGENTS_DIR": str(self.agents_dir),
             "KIRO_MCP_CONFIG": str(self.mcp_config),
+            "CODEX_HOME": str(self.codex_home),
         })
         self.environment.start()
 
@@ -64,17 +68,22 @@ class UpdateWorkflowTests(unittest.TestCase):
         receipt_file = self.project / ".skillforge" / "install.json"
         data = json.loads(receipt_file.read_text(encoding="utf-8"))
         self.assertEqual(data, {
-            "schema_version": 1,
+            "schema_version": 2,
             "persona": "engineer",
             "verticals": ["software-engineering"],
             "host": "all",
             "install_mode": "copy",
             "out": "dist",
             "marketplace": "company-skills",
-            "installed_version": "0.1.0",
+            "installed_version": "0.2.0",
             "kiro": {
                 "skills_dir": str(self.skills_dir.resolve()),
+                "agents_dir": str(self.agents_dir.resolve()),
                 "mcp_config": str(self.mcp_config.resolve()),
+            },
+            "codex": {
+                "agents_dir": str((self.codex_home / "agents").resolve()),
+                "config": str((self.codex_home / "config.toml").resolve()),
             },
         })
         self.assertIn(str(receipt_file), output)
@@ -145,9 +154,12 @@ class UpdateWorkflowTests(unittest.TestCase):
             install_mode="copy",
             out="dist",
             marketplace="company-skills",
-            installed_version="0.1.0",
+            installed_version="0.2.0",
             kiro_skills_dir=str(self.skills_dir.resolve()),
+            kiro_agents_dir=str(self.agents_dir.resolve()),
             kiro_mcp_config=str(self.mcp_config.resolve()),
+            codex_agents_dir=str((self.codex_home / "agents").resolve()),
+            codex_config=str((self.codex_home / "config.toml").resolve()),
         )
         packs = [
             self.project / "dist" / "engineer-pack",
@@ -245,6 +257,30 @@ class UpdateWorkflowTests(unittest.TestCase):
 
     def test_receipt_schema_accepts_windows_absolute_paths(self) -> None:
         receipt = state.InstallReceipt.from_dict({
+            "schema_version": 2,
+            "persona": "engineer",
+            "verticals": ["software-engineering"],
+            "host": "all",
+            "install_mode": "copy",
+            "out": "dist",
+            "marketplace": "skillforge",
+            "installed_version": "0.2.0",
+            "kiro": {
+                "skills_dir": r"C:\Users\Example\.kiro\skills",
+                "agents_dir": r"C:\Users\Example\.kiro\agents",
+                "mcp_config": r"C:\Users\Example\.kiro\settings\mcp.json",
+            },
+            "codex": {
+                "agents_dir": r"C:\Users\Example\.codex\agents",
+                "config": r"C:\Users\Example\.codex\config.toml",
+            },
+        }, Path("install.json"))
+
+        self.assertEqual(receipt.install_mode, "copy")
+        self.assertTrue(receipt.kiro_skills_dir.startswith("C:"))
+
+    def test_version_one_receipt_migrates_agent_paths(self) -> None:
+        receipt = state.InstallReceipt.from_dict({
             "schema_version": 1,
             "persona": "engineer",
             "verticals": ["software-engineering"],
@@ -254,13 +290,17 @@ class UpdateWorkflowTests(unittest.TestCase):
             "marketplace": "skillforge",
             "installed_version": "0.1.0",
             "kiro": {
-                "skills_dir": r"C:\Users\Example\.kiro\skills",
-                "mcp_config": r"C:\Users\Example\.kiro\settings\mcp.json",
+                "skills_dir": str(self.skills_dir.resolve()),
+                "mcp_config": str(self.mcp_config.resolve()),
             },
         }, Path("install.json"))
 
-        self.assertEqual(receipt.install_mode, "copy")
-        self.assertTrue(receipt.kiro_skills_dir.startswith("C:"))
+        self.assertEqual(receipt.schema_version, 2)
+        self.assertEqual(receipt.kiro_agents_dir, str(self.agents_dir.resolve()))
+        self.assertEqual(
+            Path(receipt.codex_agents_dir).resolve(),
+            (self.codex_home / "agents").resolve(),
+        )
 
     def test_windows_defaults_to_copy_mode_without_a_flag(self) -> None:
         self.assertFalse(install.should_symlink(False, False, "nt"))
@@ -296,6 +336,8 @@ class UpdateWorkflowTests(unittest.TestCase):
 
         for runner in ("windows-latest", "macos-latest", "ubuntu-latest"):
             self.assertIn(runner, workflow)
+        self.assertIn("python -m skillforge eval", workflow)
+        self.assertIn("python -m skillforge mutate-test", workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
         self.assertIn("Parse PowerShell updater", workflow)
 

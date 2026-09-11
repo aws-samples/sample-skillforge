@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "pack_version": "0.2.0",
+  "persona": "project-manager",
+  "agents": [
+    {
+      "source": "project-manager",
+      "name": "pm-project-manager",
+      "files": {
+        "claude": "agents/pm-project-manager.md",
+        "codex": "agents/codex/pm-project-manager.toml",
+        "kiro": "agents/kiro/pm-project-manager.json",
+        "quick": "agents/quick/pm-project-manager.json"
+      },
+      "grants": {
+        "claude": {
+          "tools": [
+            "Read",
+            "Grep",
+            "Glob",
+            "Skill"
+          ],
+          "model": "inherit"
+        },
+        "codex": {
+          "sandbox_mode": "read-only",
+          "web_search": "disabled"
+        },
+        "kiro": {
+          "tools": [
+            "read"
+          ],
+          "allowed_tools": [
+            "read"
+          ]
+        },
+        "quick": {
+          "tools": []
+        }
+      }
+    }
+  ]
+}

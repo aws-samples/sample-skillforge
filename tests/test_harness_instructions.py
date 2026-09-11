@@ -26,6 +26,8 @@ class HarnessInstructionTests(unittest.TestCase):
             "python3 -m skillforge sync-harness --check",
             "python3 -m skillforge build --all --vertical all",
             "python3 -m skillforge validate",
+            "python3 -m skillforge eval",
+            "python3 -m skillforge mutate-test",
             "python3 -m unittest discover -s tests -v",
         ):
             self.assertIn(command, agents)
@@ -50,7 +52,7 @@ class HarnessInstructionTests(unittest.TestCase):
 
         self.assertEqual(meta["name"], "skillforge-authoring")
         description = meta["description"].lower()
-        for trigger in ("persona", "vertical", "constraint", "skill.md"):
+        for trigger in ("persona", "vertical", "agent", "constraint", "skill.md"):
             self.assertIn(trigger, description)
 
         links = re.findall(r"\((references/[^)]+)\)", text)

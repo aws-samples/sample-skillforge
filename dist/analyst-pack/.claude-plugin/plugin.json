@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "analyst-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Skills for analysts working in the warehouse: querying, reporting, and handling data within the rules that apply to them.",
   "author": {
     "name": "Skillforge contributors"

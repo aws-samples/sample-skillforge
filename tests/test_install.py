@@ -19,10 +19,14 @@ class KiroInstallTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.skills_dir = self.root / "kiro" / "skills"
+        self.agents_dir = self.root / "kiro" / "agents"
         self.mcp_config = self.root / "kiro" / "settings" / "mcp.json"
+        self.codex_home = self.root / "codex"
         self.environment = patch.dict(os.environ, {
             "KIRO_SKILLS_DIR": str(self.skills_dir),
+            "KIRO_AGENTS_DIR": str(self.agents_dir),
             "KIRO_MCP_CONFIG": str(self.mcp_config),
+            "CODEX_HOME": str(self.codex_home),
         })
         self.environment.start()
 
@@ -200,6 +204,8 @@ class KiroInstallTests(unittest.TestCase):
         installed = install.install_kiro(project_manager, symlink=False)
 
         self.assertEqual(installed["linked"], 5)
+        self.assertEqual(installed["agents_installed"], 1)
+        self.assertTrue((self.agents_dir / "pm-project-manager.json").is_file())
         self.assertEqual({
             path.name for path in self.skills_dir.iterdir()
         }, {
@@ -220,6 +226,10 @@ class KiroInstallTests(unittest.TestCase):
         self.assertEqual(swapped["removed"], 5)
         self.assertEqual(swapped["linked"], 6)
         self.assertEqual(swapped["mcp_added"], 2)
+        self.assertEqual(swapped["agents_removed"], 1)
+        self.assertEqual(swapped["agents_installed"], 1)
+        self.assertFalse((self.agents_dir / "pm-project-manager.json").exists())
+        self.assertTrue((self.agents_dir / "eng-software-engineer.json").is_file())
         self.assertEqual({
             path.name for path in self.skills_dir.iterdir()
         }, {
@@ -233,6 +243,77 @@ class KiroInstallTests(unittest.TestCase):
         servers = self.read_mcp()
         self.assertFalse(servers["sqlite-explorer"].get("disabled", False))
         self.assertTrue(servers["warehouse-mcp"]["disabled"])
+
+    def test_codex_agent_registration_preserves_user_config_and_modified_files(self) -> None:
+        project = copy_project(self.root)
+        built, _, build_error = build_all(project)
+        self.assertEqual(built, 0, build_error)
+        config = self.codex_home / "config.toml"
+        config.parent.mkdir(parents=True)
+        config.write_text('model = "gpt-test"\n', encoding="utf-8")
+        packs = [project / "dist" / "engineer-pack"]
+
+        result = install.install_codex_agents(packs)
+
+        agent = self.codex_home / "agents" / "eng-software-engineer.toml"
+        self.assertEqual(result["agents_installed"], 1)
+        self.assertTrue(agent.is_file())
+        text = config.read_text(encoding="utf-8")
+        self.assertIn('model = "gpt-test"', text)
+        self.assertIn("[agents.eng-software-engineer]", text)
+        self.assertIn(install.CODEX_AGENT_BLOCK_START, text)
+
+        agent.write_text(
+            agent.read_text(encoding="utf-8") + "# user note\n",
+            encoding="utf-8",
+        )
+        removed = install.uninstall_codex_agents()
+
+        self.assertEqual(removed["agents_preserved"], 1)
+        self.assertTrue(agent.is_file())
+        self.assertNotIn(
+            install.CODEX_AGENT_BLOCK_START,
+            config.read_text(encoding="utf-8"),
+        )
+
+    def test_codex_agent_install_refuses_invalid_config_before_writing(self) -> None:
+        project = copy_project(self.root)
+        built, _, build_error = build_all(project)
+        self.assertEqual(built, 0, build_error)
+        config = self.codex_home / "config.toml"
+        config.parent.mkdir(parents=True)
+        config.write_text("[not-valid\n", encoding="utf-8")
+
+        with self.assertRaises(model.ModelError):
+            install.install_codex_agents(
+                [project / "dist" / "engineer-pack"])
+
+        self.assertEqual(config.read_text(encoding="utf-8"), "[not-valid\n")
+        self.assertFalse((self.codex_home / "agents").exists())
+
+    def test_codex_agent_install_detects_a_quoted_user_agent_name(self) -> None:
+        project = copy_project(self.root)
+        built, _, build_error = build_all(project)
+        self.assertEqual(built, 0, build_error)
+        config = self.codex_home / "config.toml"
+        config.parent.mkdir(parents=True)
+        config.write_text(
+            '[agents."eng-software-engineer"]\n'
+            'description = "User owned"\n'
+            'config_file = "/tmp/user-agent.toml"\n',
+            encoding="utf-8",
+        )
+
+        result = install.install_codex_agents(
+            [project / "dist" / "engineer-pack"])
+
+        self.assertEqual(result["agents_skipped"], 1)
+        self.assertFalse(
+            (self.codex_home / "agents" / "eng-software-engineer.toml").exists())
+        self.assertNotIn(
+            install.CODEX_AGENT_BLOCK_START,
+            config.read_text(encoding="utf-8"),
+        )
 
 
 if __name__ == "__main__":

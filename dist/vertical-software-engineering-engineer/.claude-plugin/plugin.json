@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "vertical-software-engineering-engineer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Technical design and code-review workflows for software engineers delivering safe changes.",
   "author": {
     "name": "Skillforge contributors"

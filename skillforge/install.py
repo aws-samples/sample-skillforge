@@ -35,10 +35,13 @@ true.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import shutil
 import sys
+import tomllib
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -50,6 +53,9 @@ CREATED = "x-created-by-skillforge"
 ADOPTED = "x-adopted-by-skillforge"
 #: The adopted entry's original `disabled` state, so restore is exact rather than a guess.
 PRIOR = "x-prior-disabled-skillforge"
+MANAGED_AGENT_FILES = ".skillforge-managed-agents"
+CODEX_AGENT_BLOCK_START = "# BEGIN SKILLFORGE MANAGED AGENTS"
+CODEX_AGENT_BLOCK_END = "# END SKILLFORGE MANAGED AGENTS"
 
 
 def kiro_skills_dir() -> Path:
@@ -63,6 +69,238 @@ def kiro_mcp_config() -> Path:
 
 def kiro_agents_dir() -> Path:
     return Path(os.environ.get("KIRO_AGENTS_DIR") or Path.home() / ".kiro" / "agents")
+
+
+def codex_home() -> Path:
+    return Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+
+
+def codex_agents_dir() -> Path:
+    return Path(os.environ.get("CODEX_AGENTS_DIR") or codex_home() / "agents")
+
+
+def codex_config() -> Path:
+    return Path(os.environ.get("CODEX_CONFIG") or codex_home() / "config.toml")
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _desired_agent_files(packs: list[Path], host: str) -> dict[str, Path]:
+    extensions = {"kiro": ".json", "codex": ".toml"}
+    extension = extensions[host]
+    desired: dict[str, Path] = {}
+    owners: dict[str, str] = {}
+    for pack in packs:
+        directory = pack / "agents" / host
+        if not directory.is_dir():
+            continue
+        for source in sorted(directory.glob(f"*{extension}")):
+            name = source.name
+            if name in desired:
+                raise model.ModelError(
+                    f"agent file {name!r} appears in both {owners[name]!r} and {pack.name!r}")
+            if not model.SLUG.match(source.stem):
+                raise model.ModelError(
+                    f"{source}: generated agent filename must be lowercase kebab-case")
+            if host == "kiro":
+                try:
+                    data = json.loads(source.read_text(encoding="utf-8"))
+                except (OSError, ValueError) as exc:
+                    raise model.ModelError(f"{source} is not valid JSON: {exc}")
+                if not isinstance(data, dict) or not isinstance(data.get("prompt"), str):
+                    raise model.ModelError(f"{source} must contain a Kiro agent object")
+            desired[name] = source
+            owners[name] = pack.name
+    return desired
+
+
+def _load_managed_agent_files(directory: Path) -> dict[str, dict]:
+    path = directory / MANAGED_AGENT_FILES
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise model.ModelError(f"{path} is not valid readable JSON: {exc}")
+    files = data.get("files") if isinstance(data, dict) else None
+    if not isinstance(data, dict) or data.get("version") != 1 or not isinstance(files, dict):
+        raise model.ModelError(f"{path} must contain version=1 and a files object")
+    for name, entry in files.items():
+        if Path(name).name != name or not isinstance(entry, dict):
+            raise model.ModelError(f"{path}: invalid managed filename {name!r}")
+        digest = entry.get("sha256")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise model.ModelError(f"{path}: {name!r} has an invalid sha256")
+    return files
+
+
+def _write_managed_agent_files(directory: Path, files: dict[str, dict]) -> None:
+    path = directory / MANAGED_AGENT_FILES
+    if not files:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        return
+    directory.mkdir(parents=True, exist_ok=True)
+    temporary = directory / f".{MANAGED_AGENT_FILES}.tmp"
+    temporary.write_text(
+        json.dumps({"version": 1, "files": files}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
+def _apply_agent_files(desired: dict[str, Path], directory: Path,
+                       managed: dict[str, dict],
+                       blocked: set[str] | None = None) -> tuple[dict, dict[str, dict]]:
+    """Reconcile generated agent files while preserving changed or user-owned files."""
+    blocked = blocked or set()
+    installed = skipped = removed = preserved = 0
+
+    for name, entry in managed.items():
+        target = directory / name
+        if not target.exists() and not target.is_symlink():
+            continue
+        if target.is_file() and _sha256(target) == entry["sha256"]:
+            target.unlink()
+            removed += 1
+        else:
+            preserved += 1
+
+    next_managed: dict[str, dict] = {}
+    if desired:
+        directory.mkdir(parents=True, exist_ok=True)
+    for name, source in sorted(desired.items()):
+        target = directory / name
+        if name in blocked or target.exists() or target.is_symlink():
+            skipped += 1
+            continue
+        shutil.copy2(source, target)
+        next_managed[name] = {
+            "sha256": _sha256(target),
+            "source": str(source),
+        }
+        installed += 1
+    _write_managed_agent_files(directory, next_managed)
+    return {
+        "agents_installed": installed,
+        "agents_skipped": skipped,
+        "agents_removed": removed,
+        "agents_preserved": preserved,
+    }, next_managed
+
+
+def _strip_codex_agent_block(text: str, path: Path) -> str:
+    starts = text.count(CODEX_AGENT_BLOCK_START)
+    ends = text.count(CODEX_AGENT_BLOCK_END)
+    if starts == ends == 0:
+        return text
+    if starts != 1 or ends != 1:
+        raise model.ModelError(
+            f"{path}: malformed Skillforge agent block; expected one start and one end marker")
+    start = text.index(CODEX_AGENT_BLOCK_START)
+    try:
+        end = text.index(CODEX_AGENT_BLOCK_END, start) + len(CODEX_AGENT_BLOCK_END)
+    except ValueError:
+        raise model.ModelError(f"{path}: Skillforge agent end marker precedes its start marker")
+    if end < len(text) and text[end:end + 1] == "\n":
+        end += 1
+    return text[:start].rstrip() + ("\n" if text[:start].strip() else "") + text[end:].lstrip()
+
+
+def _codex_user_agents(text: str, path: Path) -> set[str]:
+    if not text.strip():
+        return set()
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as exc:
+        raise model.ModelError(f"{path} is not valid TOML: {exc}. It was left unchanged.")
+    agents = data.get("agents")
+    if agents is None:
+        return set()
+    if not isinstance(agents, dict):
+        raise model.ModelError(f"{path}: agents must be a TOML table. It was left unchanged.")
+    return {str(name) for name in agents}
+
+
+def _codex_description(path: Path) -> str:
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raise model.ModelError(f"{path}: generated Codex agent is not valid TOML: {exc}")
+    description = data.get("description")
+    if not isinstance(description, str) or not description:
+        raise model.ModelError(f"{path}: generated Codex agent has no readable description")
+    return description
+
+
+def _write_codex_agent_block(config_path: Path, base: str,
+                             desired: dict[str, Path],
+                             managed: dict[str, dict],
+                             directory: Path) -> None:
+    sections: list[str] = []
+    for filename in sorted(managed):
+        source = desired[filename]
+        name = Path(filename).stem
+        sections.extend([
+            f"[agents.{name}]",
+            f"description = {json.dumps(_codex_description(source), ensure_ascii=False)}",
+            f"config_file = {json.dumps(str((directory / filename).resolve()), ensure_ascii=False)}",
+            "",
+        ])
+    block = ""
+    if sections:
+        block = (
+            CODEX_AGENT_BLOCK_START + "\n"
+            + "\n".join(sections).rstrip() + "\n"
+            + CODEX_AGENT_BLOCK_END + "\n"
+        )
+    rendered = base.rstrip()
+    if rendered and block:
+        rendered += "\n\n"
+    rendered += block
+    if rendered and not rendered.endswith("\n"):
+        rendered += "\n"
+    if not rendered and not config_path.exists():
+        return
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = config_path.with_name(f".{config_path.name}.skillforge.tmp")
+    temporary.write_text(rendered, encoding="utf-8")
+    temporary.replace(config_path)
+
+
+def install_codex_agents(packs: Path | Iterable[Path],
+                         agents_dir: Path | None = None,
+                         config_path: Path | None = None) -> dict:
+    selected = _selected_packs(packs)
+    agents_dir = agents_dir or codex_agents_dir()
+    config_path = config_path or codex_config()
+    text = config_path.read_text(encoding="utf-8") if config_path.is_file() else ""
+    base = _strip_codex_agent_block(text, config_path)
+    desired = _desired_agent_files(selected, "codex")
+    blocked = {
+        f"{name}.toml"
+        for name in _codex_user_agents(base, config_path)
+    }
+    managed = _load_managed_agent_files(agents_dir)
+    result, next_managed = _apply_agent_files(desired, agents_dir, managed, blocked)
+    _write_codex_agent_block(config_path, base, desired, next_managed, agents_dir)
+    return result
+
+
+def uninstall_codex_agents(agents_dir: Path | None = None,
+                           config_path: Path | None = None) -> dict:
+    agents_dir = agents_dir or codex_agents_dir()
+    config_path = config_path or codex_config()
+    text = config_path.read_text(encoding="utf-8") if config_path.is_file() else ""
+    base = _strip_codex_agent_block(text, config_path)
+    managed = _load_managed_agent_files(agents_dir)
+    result, next_managed = _apply_agent_files({}, agents_dir, managed)
+    _write_codex_agent_block(config_path, base, {}, next_managed, agents_dir)
+    return result
 
 
 def remove_ours(directory: Path) -> int:
@@ -234,7 +472,8 @@ def _reconcile_mcp(desired: dict[str, dict], config: dict | None = None,
 
 def install_kiro(packs: Path | Iterable[Path], symlink: bool | None = None,
                  skills_dir: Path | None = None,
-                 mcp_config: Path | None = None) -> dict:
+                 mcp_config: Path | None = None,
+                 agents_dir: Path | None = None) -> dict:
     """Install one persona pack plus zero or more vertical packs as a reconciled set."""
     if symlink is None:
         symlink = os.name != "nt"
@@ -242,8 +481,11 @@ def install_kiro(packs: Path | Iterable[Path], symlink: bool | None = None,
     desired_mcp = _desired_mcp(selected)
     skills_dir = skills_dir or kiro_skills_dir()
     mcp_config = mcp_config or kiro_mcp_config()
+    agents_dir = agents_dir or kiro_agents_dir()
     config = _load_kiro_config(mcp_config)
     _validate_mcp_selection(config, desired_mcp, mcp_config)
+    desired_agents = _desired_agent_files(selected, "kiro")
+    managed_agents = _load_managed_agent_files(agents_dir)
 
     # Detect a broken build before removing the currently installed set.
     targets: dict[str, Path] = {}
@@ -279,20 +521,27 @@ def install_kiro(packs: Path | Iterable[Path], symlink: bool | None = None,
         linked += 1
 
     mcp = _reconcile_mcp(desired_mcp, config, mcp_config)
+    agent_result, _ = _apply_agent_files(
+        desired_agents, agents_dir, managed_agents)
     return {
         "packs": [p.name for p in selected],
         "linked": linked,
         "skipped": skipped,
         "removed": removed,
+        **agent_result,
         **mcp,
     }
 
 
 def uninstall_kiro(skills_dir: Path | None = None,
-                   mcp_config: Path | None = None) -> dict:
+                   mcp_config: Path | None = None,
+                   agents_dir: Path | None = None) -> dict:
     removed = remove_ours(skills_dir or kiro_skills_dir())
     mcp = _reconcile_mcp({}, path=mcp_config or kiro_mcp_config())
-    return {"removed": removed, **mcp}
+    managed = _load_managed_agent_files(agents_dir or kiro_agents_dir())
+    agent_result, _ = _apply_agent_files(
+        {}, agents_dir or kiro_agents_dir(), managed)
+    return {"removed": removed, **agent_result, **mcp}
 
 
 def resolve_vertical_ids(persona: model.Persona, requested: Iterable[str],
@@ -367,8 +616,15 @@ def main(argv: list[str] | None = None) -> int:
         try:
             receipt = state.load(state_file) if state_file.is_file() else None
             skills_dir = Path(receipt.kiro_skills_dir) if receipt else kiro_skills_dir()
+            agents_dir = Path(receipt.kiro_agents_dir) if receipt else kiro_agents_dir()
             mcp_config = Path(receipt.kiro_mcp_config) if receipt else kiro_mcp_config()
-            r = uninstall_kiro(skills_dir, mcp_config)
+            r = uninstall_kiro(skills_dir, mcp_config, agents_dir)
+            codex_result = None
+            if receipt and receipt.host == "all":
+                codex_result = uninstall_codex_agents(
+                    Path(receipt.codex_agents_dir),
+                    Path(receipt.codex_config),
+                )
         except model.ModelError as exc:
             print(f"✗ {exc}", file=sys.stderr)
             return 1
@@ -378,6 +634,12 @@ def main(argv: list[str] | None = None) -> int:
         if r["mcp_restored"]:
             print(f"      restored {r['mcp_restored']} of your own server(s) it had adopted, with "
                   f"their original enabled state")
+        if r["agents_removed"] or r["agents_preserved"]:
+            print(f"      agents: removed {r['agents_removed']}, preserved "
+                  f"{r['agents_preserved']} user-modified file(s)")
+        if codex_result:
+            print(f"Codex: removed {codex_result['agents_removed']} managed agent(s), preserved "
+                  f"{codex_result['agents_preserved']} user-modified file(s)")
         if removed_receipt:
             print(f"      removed installation receipt {state_file}")
         print("Claude Code / Codex: `claude plugin uninstall <pack>` / "
@@ -393,13 +655,22 @@ def main(argv: list[str] | None = None) -> int:
         vertical_ids = resolve_vertical_ids(persona, args.vertical or (), root)
         packs = selected_pack_paths(root, args.out, persona, vertical_ids)
         skills_dir = kiro_skills_dir().resolve()
+        agents_dir = kiro_agents_dir().resolve()
         mcp_config = kiro_mcp_config().resolve()
         r = install_kiro(
             packs,
             symlink=use_symlink,
             skills_dir=skills_dir,
             mcp_config=mcp_config,
+            agents_dir=agents_dir,
         )
+        codex_agents = codex_agents_dir().resolve()
+        codex_settings = codex_config().resolve()
+        codex_result = install_codex_agents(
+            packs,
+            agents_dir=codex_agents,
+            config_path=codex_settings,
+        ) if args.host == "all" else None
         marketplace = args.marketplace or root.name
         receipt = state.InstallReceipt(
             persona=persona.id,
@@ -410,7 +681,10 @@ def main(argv: list[str] | None = None) -> int:
             marketplace=marketplace,
             installed_version=state.project_version(root),
             kiro_skills_dir=str(skills_dir),
+            kiro_agents_dir=str(agents_dir),
             kiro_mcp_config=str(mcp_config),
+            codex_agents_dir=str(codex_agents),
+            codex_config=str(codex_settings),
         )
         state.write(state_file, receipt)
     except model.ModelError as exc:
@@ -424,6 +698,11 @@ def main(argv: list[str] | None = None) -> int:
     if r["removed"]:
         print(f"      removed {r['removed']} skill(s) from the previous selection — personas swap, "
               f"while the selected verticals install alongside the new persona")
+    if r["agents_installed"] or r["agents_removed"] or r["agents_skipped"]:
+        print(f"      agents: installed {r['agents_installed']} in {agents_dir}, removed "
+              f"{r['agents_removed']} stale, skipped {r['agents_skipped']} user-owned")
+    if r["agents_preserved"]:
+        print(f"      preserved {r['agents_preserved']} user-modified Kiro agent file(s)")
     if r["mcp_added"] or r["mcp_adopted"]:
         print(f"      mcp: added {r['mcp_added']}, adopted {r['mcp_adopted']} of your own "
               f"(restored on uninstall, not deleted)")
@@ -433,6 +712,14 @@ def main(argv: list[str] | None = None) -> int:
     print("      opt-in servers arrive DISABLED — enable the ones you want in Kiro's MCP panel")
     print("      restart kiro-cli and the Kiro IDE to pick it up")
     print(f"      recorded selection in {state_file}")
+
+    if codex_result is not None:
+        print(f"\nCodex agents: installed {codex_result['agents_installed']} in {codex_agents}, "
+              f"removed {codex_result['agents_removed']} stale, skipped "
+              f"{codex_result['agents_skipped']} user-owned")
+        if codex_result["agents_preserved"]:
+            print(f"      preserved {codex_result['agents_preserved']} user-modified agent file(s)")
+        print(f"      registrations reconciled in {codex_settings}")
 
     print(f"\nClaude Code and Codex install from the repo itself — push it, then:")
     print("  claude plugin marketplace add <owner>/<repo>")
@@ -444,9 +731,17 @@ def main(argv: list[str] | None = None) -> int:
 
     quick = [(pack, len(list((pack / "quick").glob("*.quick"))))
              for pack in packs if (pack / "quick").is_dir()]
-    if quick:
-        print(f"\nAmazon Quick: {sum(n for _, n in quick)} variant(s) across "
-              f"{', '.join(str(pack / 'quick') for pack, _ in quick)}. Import the folders by hand, "
-              f"then QUIT AND RELAUNCH Quick — it reads skills only at launch, so until you do the "
-              f"skills are installed and dead.")
+    quick_agents = [
+        path
+        for pack in packs
+        for path in (pack / "agents" / "quick").glob("*.json")
+    ]
+    if quick or quick_agents:
+        folders = [str(pack / "quick") for pack, _ in quick]
+        folders.extend(str(path.parent) for path in quick_agents)
+        print(f"\nAmazon Quick: {sum(n for _, n in quick)} skill variant(s) and "
+              f"{len(quick_agents)} agent definition(s) across "
+              f"{', '.join(dict.fromkeys(folders))}. Import them by hand, then QUIT AND RELAUNCH "
+              f"Quick — it reads skills only at launch, so until you do the skills are installed "
+              f"and dead.")
     return 0
