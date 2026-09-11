@@ -283,6 +283,14 @@ SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 \
 Host-neutral should-trigger and should-not-trigger cases live in
 `evals/skillforge-authoring.json` for replay in clean Codex, Claude Code and Kiro workspaces.
 
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## License
+
+This project is licensed under the Apache-2.0 License.
+
 ## Status
 
 **v0.1.0, early.** Working: the model, the build, all four host shapes, both marketplaces, Quick
