@@ -20,7 +20,7 @@ import re
 import sys
 from pathlib import Path
 
-from . import model, resolve
+from . import harness, model, resolve
 from .build import frontmatter, prefixed
 
 #: Frontmatter this repo's reader and a real YAML parser agree on. Anything else is rejected rather
@@ -40,6 +40,32 @@ class Report:
 
     def warn(self, msg: str) -> None:
         self.warnings.append(msg)
+
+
+def check_harness_instructions(root: Path, r: Report) -> None:
+    """Repository instructions and generated local authoring-skill adapters."""
+    agents = root / "AGENTS.md"
+    claude = root / "CLAUDE.md"
+    if not agents.is_file():
+        r.fail("AGENTS.md is missing — Codex and Kiro would not receive repository instructions")
+    if not claude.is_file():
+        r.fail("CLAUDE.md is missing — Claude Code would not receive repository instructions")
+    elif "@AGENTS.md" not in claude.read_text(encoding="utf-8"):
+        r.fail("CLAUDE.md must import @AGENTS.md so all harnesses share one instruction source")
+
+    for problem in harness.check(root):
+        r.fail(problem)
+
+    canonical = root / harness.CANONICAL / "SKILL.md"
+    if canonical.is_file():
+        meta, _ = frontmatter(canonical.read_text(encoding="utf-8"))
+        if meta.get("name") != "skillforge-authoring":
+            r.fail(f"{harness.CANONICAL}/SKILL.md must declare name=skillforge-authoring")
+        description = meta.get("description", "")
+        for term in ("persona", "vertical"):
+            if term not in description.lower():
+                r.fail(f"{harness.CANONICAL}/SKILL.md description must mention {term!r} so the "
+                       f"authoring workflow can be discovered")
 
 
 def check_skills(root: Path, r: Report) -> None:
@@ -118,6 +144,7 @@ def check_personas(root: Path, r: Report) -> None:
         r.fail("no personas under policies/personas/")
         return
     packs: dict[str, str] = {}
+    personas: dict[str, model.Persona] = {}
     available = {d.name for d in (root / "skills").iterdir() if d.is_dir()}
     claimed: dict[str, str] = {}
     for d in sorted((root / "skills").iterdir()):
@@ -134,6 +161,7 @@ def check_personas(root: Path, r: Report) -> None:
         except model.ModelError as exc:
             r.fail(str(exc))
             continue
+        personas[pid] = p
         if p.pack_name in packs:
             r.fail(f"personas {packs[p.pack_name]!r} and {pid!r} share pack_name "
                    f"{p.pack_name!r} — one build would overwrite the other")
@@ -151,20 +179,27 @@ def check_personas(root: Path, r: Report) -> None:
         if p.router and p.router not in p.include_skills:
             r.fail(f"persona {pid!r} names router {p.router!r} but does not include it")
 
+    vertical_ids = model.all_vertical_ids(root)
+    verticals: dict[str, model.Vertical] = {}
+    for vid in vertical_ids:
+        try:
+            verticals[vid] = model.load_vertical(vid, root)
+        except model.ModelError as exc:
+            r.fail(str(exc))
+
     for skill, vid in claimed.items():
-        if vid not in model.all_vertical_ids(root):
+        if vid not in vertical_ids:
             r.fail(f"skills/{skill}: metadata.vertical={vid!r} names no vertical under "
                    f"policies/verticals/")
-    for vid in model.all_vertical_ids(root):
-        v = model.load_vertical(vid, root)
+    for vid, v in verticals.items():
         if not [s for s, got in claimed.items() if got == vid]:
             r.fail(f"vertical {vid!r} claims no skills — nothing would be built for it")
         unknown = sorted(set(v.personas) - set(ids))
         if unknown:
             r.fail(f"vertical {vid!r} declares unknown persona(s) {unknown}")
 
-    orphans = sorted(available - {s for pid in ids
-                                  for s in model.load_persona(pid, root).include_skills}
+    orphans = sorted(available - {s for persona in personas.values()
+                                  for s in persona.include_skills}
                      - set(claimed))
     for skill in orphans:
         r.warn(f"skills/{skill}: no persona includes it and no vertical claims it, so it reaches "
@@ -183,12 +218,48 @@ def check_mcp(root: Path, r: Report) -> None:
         return
 
     derived: set[str] = set()
+    personas: dict[str, model.Persona] = {}
+    base_entitlements: dict[str, set[str]] = {}
     for pid in model.all_persona_ids(root):
         try:
             p = model.load_persona(pid, root)
         except model.ModelError:
             continue
-        derived.update(model.derive_mcp_groups(p, groups, root, resolve.resolve))
+        personas[pid] = p
+        entitled = set(model.derive_mcp_groups(p, groups, root, resolve.resolve))
+        base_entitlements[pid] = entitled
+        derived.update(entitled)
+
+    vertical_skills: dict[str, list[Path]] = {}
+    for directory in sorted((root / "skills").iterdir()):
+        md = directory / "SKILL.md"
+        if not md.is_file():
+            continue
+        meta, _ = frontmatter(md.read_text(encoding="utf-8"))
+        vertical = (meta.get("metadata") or {}).get("vertical")
+        if vertical:
+            vertical_skills.setdefault(vertical, []).append(directory)
+
+    for vid in model.all_vertical_ids(root):
+        try:
+            vertical = model.load_vertical(vid, root)
+        except model.ModelError:
+            continue
+        for pid in vertical.personas:
+            if pid not in personas:
+                continue
+            text = "\n".join(
+                resolve.resolve(model.skill_text(directory), pid)
+                for directory in vertical_skills.get(vid, [])
+            )
+            required = set(model.mcp_groups_named(text, groups))
+            missing = sorted(required - base_entitlements.get(pid, set()))
+            if missing:
+                r.fail(
+                    f"vertical {vid!r} for persona {pid!r} names MCP group(s) {missing}, but "
+                    f"{personas[pid].pack_name!r} does not entitle them. Vertical packs ship no "
+                    f"MCP configuration, so name those servers in a base skill that genuinely "
+                    f"uses them or remove the vertical dependency.")
 
     for gid, group in groups.items():
         if gid not in derived:
@@ -212,7 +283,43 @@ def check_packs(root: Path, out: Path, r: Report) -> bool:
     packs = [d for d in sorted(out.glob("*")) if (d / "skills").is_dir()] if out.is_dir() else []
     if not packs:
         return False
+
+    source_names = {
+        directory.name
+        for directory in (root / "skills").iterdir()
+        if (directory / "SKILL.md").is_file()
+    }
+    personas: dict[str, model.Persona] = {}
+    pack_personas: dict[str, model.Persona] = {}
+    for pid in model.all_persona_ids(root):
+        try:
+            persona = model.load_persona(pid, root)
+        except model.ModelError:
+            continue
+        personas[pid] = persona
+        pack_personas[persona.pack_name] = persona
+    for vid in model.all_vertical_ids(root):
+        try:
+            vertical = model.load_vertical(vid, root)
+        except model.ModelError:
+            continue
+        for pid in vertical.personas:
+            if pid in personas:
+                pack_personas[f"vertical-{vid}-{pid}"] = personas[pid]
+
     for pack in packs:
+        persona = pack_personas.get(pack.name)
+        if persona is None:
+            r.fail(f"{pack.name}: built pack matches no declared persona or vertical")
+            continue
+        base = out / persona.pack_name / "skills"
+        allowed_references = {
+            directory.name for directory in base.iterdir() if directory.is_dir()
+        } if base.is_dir() else set()
+        allowed_references.update(
+            directory.name for directory in (pack / "skills").iterdir() if directory.is_dir())
+        known_prefixed = {prefixed(name, persona.prefix) for name in source_names}
+
         for skill in sorted((pack / "skills").iterdir()):
             md = skill / "SKILL.md"
             if not md.is_file():
@@ -224,11 +331,40 @@ def check_packs(root: Path, out: Path, r: Report) -> bool:
                 r.fail(f"{pack.name}/{skill.name}: built name={meta.get('name')!r} does not match "
                        f"its directory. Hosts scan direct children and the standard requires the "
                        f"two to agree.")
-            if "<!-- profile:" in text:
-                r.fail(f"{pack.name}/{skill.name}: ships a raw conditional marker, so it delivers "
-                       f"another persona's instructions too")
-            if prefixed(skill.name, skill.name.split("-")[0] + "-") != skill.name:
-                pass
+            if not skill.name.startswith(persona.prefix):
+                r.fail(f"{pack.name}/{skill.name}: does not start with persona prefix "
+                       f"{persona.prefix!r}")
+
+            targets = [md]
+            for bundled in model.BUNDLED_DIRS:
+                directory = skill / bundled
+                if directory.is_dir():
+                    targets.extend(path for path in sorted(directory.rglob("*")) if path.is_file())
+            for path in targets:
+                try:
+                    shipped = path.read_text(encoding="utf-8")
+                except (UnicodeDecodeError, OSError):
+                    continue
+                label = f"{pack.name}/{path.relative_to(pack)}"
+                try:
+                    unresolved_groups = resolve.groups(shipped)
+                except resolve.BlockError as exc:
+                    r.fail(f"{label}: ships malformed conditional markers: {exc}")
+                    unresolved_groups = []
+                if unresolved_groups:
+                    r.fail(f"{label}: ships a raw conditional marker, so it delivers another "
+                           f"persona's instructions too")
+                without_banner = "\n".join(
+                    line for line in shipped.splitlines()
+                    if not line.startswith("> Source:"))
+                for source_name in source_names:
+                    if f"`{source_name}`" in without_banner:
+                        r.fail(f"{label}: contains unresolved skill reference `{source_name}`")
+                for reference in known_prefixed:
+                    if f"`{reference}`" in without_banner \
+                            and reference not in allowed_references:
+                        r.fail(f"{label}: references `{reference}`, which is not available from "
+                               f"the base pack plus {pack.name}")
         # Vertical packs ship no agents and no MCP by design.
         if pack.name.startswith("vertical-"):
             for stray in (".mcp.json", "mcp", "agents"):
@@ -250,7 +386,8 @@ def main(argv: list[str] | None = None) -> int:
     model.ROOT = root
     r = Report()
 
-    gates = [("skills", check_skills), ("conditional-blocks", check_blocks),
+    gates = [("harness-instructions", check_harness_instructions),
+             ("skills", check_skills), ("conditional-blocks", check_blocks),
              ("personas", check_personas), ("mcp", check_mcp)]
     for name, fn in gates:
         before = len(r.errors)

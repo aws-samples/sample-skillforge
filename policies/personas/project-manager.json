@@ -1,0 +1,8 @@
+{
+  "display_name": "Project manager",
+  "pack_name": "project-manager-pack",
+  "prefix": "pm-",
+  "description": "Skills for project managers coordinating delivery, reporting status, and handling project information without claiming technical or data access they do not have.",
+  "router": "start-here",
+  "include_skills": ["start-here", "build-report", "handle-customer-data"]
+}

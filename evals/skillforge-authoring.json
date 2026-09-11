@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "skill": "skillforge-authoring",
+  "harnesses": ["codex", "claude", "kiro"],
+  "cases": [
+    {
+      "id": "add-reviewer-persona",
+      "should_trigger": true,
+      "prompt": "Add a reviewer persona with pack name reviewer-pack and prefix rv-. It should use start-here, build-report, and handle-customer-data, and it should support the PCI DSS vertical.",
+      "expected": {
+        "created_paths": ["policies/personas/reviewer.json"],
+        "generated_packs": ["reviewer-pack", "vertical-pci-dss-reviewer"],
+        "required_outcomes": [
+          "every existing conditional group names reviewer",
+          "applicable reviewer constraint text exists",
+          "no generated skill contains a raw profile marker"
+        ],
+        "forbidden_manual_edits": ["dist/**", ".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]
+      }
+    },
+    {
+      "id": "add-hipaa-vertical",
+      "should_trigger": true,
+      "prompt": "Add a HIPAA vertical for the analyst and auditor personas with a phi-data-scope skill.",
+      "expected": {
+        "created_paths": ["policies/verticals/hipaa.json", "skills/phi-data-scope/SKILL.md"],
+        "generated_packs": ["vertical-hipaa-analyst", "vertical-hipaa-auditor"],
+        "required_outcomes": [
+          "phi-data-scope is absent from both base packs",
+          "both vertical packs contain the persona-prefixed skill",
+          "vertical packs contain no MCP or agent configuration"
+        ],
+        "forbidden_manual_edits": ["dist/**", ".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]
+      }
+    },
+    {
+      "id": "install-existing-pack",
+      "should_trigger": false,
+      "prompt": "Install the existing analyst pack with the PCI DSS vertical in Kiro.",
+      "expected": {
+        "required_outcomes": [
+          "use the installer rather than changing persona, vertical, or skill source files"
+        ]
+      }
+    }
+  ]
+}

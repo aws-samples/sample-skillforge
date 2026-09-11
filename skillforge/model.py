@@ -243,6 +243,17 @@ def skill_text(skill_dir: Path) -> str:
     return "\n".join(parts)
 
 
+def mcp_groups_named(text: str, groups: dict[str, McpGroup]) -> tuple[str, ...]:
+    """MCP groups whose server names appear in resolved shipped text."""
+    entitled = []
+    for gid, group in groups.items():
+        for server in group.servers:
+            if re.search(rf"\b{re.escape(server)}\b", text) or f"mcp__{server}__" in text:
+                entitled.append(gid)
+                break
+    return tuple(sorted(entitled))
+
+
 def derive_mcp_groups(persona: Persona, groups: dict[str, McpGroup],
                       root: Path = None, resolve=None) -> tuple[str, ...]:
     """The groups this persona is entitled to, from what its own content names.
@@ -265,11 +276,4 @@ def derive_mcp_groups(persona: Persona, groups: dict[str, McpGroup],
         for path in (base / "agents").rglob(f"{agent}.md"):
             corpus.append(path.read_text(encoding="utf-8", errors="replace"))
     text = "\n".join(resolve(c, persona.id) if resolve else c for c in corpus)
-
-    entitled = []
-    for gid, group in groups.items():
-        for server in group.servers:
-            if re.search(rf"\b{re.escape(server)}\b", text) or f"mcp__{server}__" in text:
-                entitled.append(gid)
-                break
-    return tuple(sorted(entitled))
+    return mcp_groups_named(text, groups)

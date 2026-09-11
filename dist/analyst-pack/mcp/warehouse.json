@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "warehouse-mcp": {
+      "command": "warehouse-mcp",
+      "args": [
+        "serve"
+      ]
+    }
+  }
+}

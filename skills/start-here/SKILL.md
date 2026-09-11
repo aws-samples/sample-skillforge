@@ -12,7 +12,16 @@ knowledge when a skill in this pack owns the question.
 
 ## Routing
 
+<!-- profile:analyst -->
 - Getting figures out of the warehouse → `query-warehouse`
+<!-- /profile -->
+<!-- profile:auditor -->
+<!-- /profile -->
+<!-- profile:engineer -->
+- Getting figures out of the warehouse → `query-warehouse`
+<!-- /profile -->
+<!-- profile:project-manager -->
+<!-- /profile -->
 - Turning figures into something a person reads → `build-report`
 - Anything touching customer records → `handle-customer-data`. Route here for the RULES even when
   another skill does the work.

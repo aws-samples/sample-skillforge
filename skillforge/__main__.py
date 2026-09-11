@@ -9,11 +9,15 @@ USAGE = """skillforge <command> [options]
   build      generate one pack per persona, and one per (vertical, persona)
   validate   run every gate against the source and the built packs
   install    install a built pack into Claude Code, Codex or Kiro
+  update     rebuild and reapply the selection recorded by install
+  sync-harness  synchronize the repository authoring skill for all three coding harnesses
   version    print the version
 
+  python3 -m skillforge sync-harness
   python3 -m skillforge build --all --vertical all
   python3 -m skillforge validate
-  python3 -m skillforge install --persona analyst
+  python3 -m skillforge install --persona analyst --vertical pci-dss
+  python3 -m skillforge update
 """
 
 
@@ -29,6 +33,10 @@ def main(argv: list[str] | None = None) -> int:
         from .validate import main as run
     elif command == "install":
         from .install import main as run
+    elif command == "update":
+        from .update import main as run
+    elif command == "sync-harness":
+        from .harness import main as run
     elif command == "version":
         from . import __version__
         print(__version__)

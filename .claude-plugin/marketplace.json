@@ -1,8 +1,9 @@
 {
   "name": "skillforge",
   "version": "0.1.0",
+  "description": "Portable agent skills with personas, policy constraints, vertical add-ons, and host-specific packaging.",
   "owner": {
-    "name": "TODO: set an owner in .claude-plugin/marketplace.json"
+    "name": "Skillforge contributors"
   },
   "plugins": [
     {
@@ -26,8 +27,34 @@
       "description": "Cardholder-data handling rules that install alongside a base pack. Additive: any number of verticals may be installed together."
     },
     {
-      "name": "mcp-warehouse",
-      "source": "./dist/analyst-pack/mcp-plugins/mcp-warehouse",
+      "name": "engineer-pack",
+      "source": "./dist/engineer-pack",
+      "description": "Skills for software engineers designing and reviewing changes, investigating data safely, and reporting conclusions with reproducible evidence."
+    },
+    {
+      "name": "vertical-software-engineering-engineer",
+      "source": "./dist/vertical-software-engineering-engineer",
+      "description": "Technical design and code-review workflows for software engineers delivering safe changes."
+    },
+    {
+      "name": "project-manager-pack",
+      "source": "./dist/project-manager-pack",
+      "description": "Skills for project managers coordinating delivery, reporting status, and handling project information without claiming technical or data access they do not have."
+    },
+    {
+      "name": "vertical-project-delivery-project-manager",
+      "source": "./dist/vertical-project-delivery-project-manager",
+      "description": "Planning and status-management workflows for project managers delivering a defined outcome."
+    },
+    {
+      "name": "mcp-warehouse-analyst-pack",
+      "source": "./dist/analyst-pack/mcp-plugins/mcp-warehouse-analyst-pack",
+      "description": "The analytics warehouse. Needs a corporate SSO session, so it cannot start implicitly. Needs credentials, a VPN or a licence this pack cannot supply.",
+      "defaultEnabled": false
+    },
+    {
+      "name": "mcp-warehouse-engineer-pack",
+      "source": "./dist/engineer-pack/mcp-plugins/mcp-warehouse-engineer-pack",
       "description": "The analytics warehouse. Needs a corporate SSO session, so it cannot start implicitly. Needs credentials, a VPN or a licence this pack cannot supply.",
       "defaultEnabled": false
     }

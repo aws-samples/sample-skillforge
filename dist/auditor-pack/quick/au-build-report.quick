@@ -1,0 +1,41 @@
+---
+name: au-build-report
+description: "Turn figures into a written report with a stated method and stated limitations. Use when the user asks for a report, summary, write-up, or something to send onward."
+display_name: "Build a report"
+trigger: "write me a report"
+icon: chart
+---
+
+> Generated file — do not edit.
+> Persona: auditor (External auditor)
+> Pack:    auditor-pack v0.1.0
+> Source:  skill `build-report` @ ee70cb5
+> Edit the source skill, not this copy — this one is overwritten on every build.
+
+# Build a report
+
+## Boundaries that apply to this skill
+
+**You have read access to evidence, not to data.** Request extracts through the engagement contact;
+do not connect to the warehouse or any application database yourself, even read-only. There is no
+exception process for direct access — an extract with a recorded provenance is what makes a finding
+defensible.
+
+
+## Structure
+
+1. **What was asked** — one sentence, in the requester's words.
+2. **What the figures say** — the numbers, each traceable to how it was produced.
+3. **What they do not say** — the limitations. This section is the one that makes the report
+   trustworthy, and the one most often dropped.
+4. **What to do next** — only if the figures support it.
+
+## Getting the figures
+
+Request an extract through the engagement contact and record its provenance — who produced it, from
+which system, on what date. You do not query systems directly, so an extract with no recorded
+provenance cannot support a finding.
+
+## Never
+
+Do not round a figure to make a point, and do not present a projection as a measurement.

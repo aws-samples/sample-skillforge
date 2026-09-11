@@ -3,6 +3,9 @@
   "access": "open",
   "loading": "eager",
   "mcpServers": {
-    "sqlite-explorer": { "command": "uvx", "args": ["mcp-server-sqlite", "--db-path", "./warehouse.db"] }
+    "sqlite-explorer": {
+      "command": "uvx",
+      "args": ["--with", "mcp<2", "mcp-server-sqlite", "--db-path", "./warehouse.db"]
+    }
   }
 }

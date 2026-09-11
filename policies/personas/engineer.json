@@ -1,0 +1,8 @@
+{
+  "display_name": "Software engineer",
+  "pack_name": "engineer-pack",
+  "prefix": "eng-",
+  "description": "Skills for software engineers designing and reviewing changes, investigating data safely, and reporting conclusions with reproducible evidence.",
+  "router": "start-here",
+  "include_skills": ["start-here", "query-warehouse", "build-report", "handle-customer-data"]
+}

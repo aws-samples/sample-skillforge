@@ -1,0 +1,49 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Build every pack
+        run: python -m skillforge build --all --vertical all
+
+      - name: Validate
+        run: python -m skillforge validate
+
+      - name: Test
+        run: python -m unittest discover -s tests -v
+
+      - name: Parse POSIX updater
+        if: runner.os != 'Windows'
+        shell: bash
+        run: sh -n scripts/update.sh
+
+      - name: Parse PowerShell updater
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "scripts/update.ps1"),
+            [ref] $tokens,
+            [ref] $errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }

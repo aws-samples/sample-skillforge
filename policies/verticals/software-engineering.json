@@ -1,0 +1,6 @@
+{
+  "id": "software-engineering",
+  "display_name": "Software engineering",
+  "description": "Technical design and code-review workflows for software engineers delivering safe changes.",
+  "personas": ["engineer"]
+}

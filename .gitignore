@@ -1,4 +1,4 @@
-dist/
 __pycache__/
 *.pyc
 .skillforge-pack
+.skillforge/

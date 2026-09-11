@@ -33,3 +33,11 @@ route forward gets escalated over your head; a refusal with an alternative gets 
 Record the request and the refusal in the engagement file, then continue with the evidence you have.
 An auditor asked to accept unapproved data has a finding, not a problem.
 <!-- /profile -->
+<!-- profile:engineer -->
+Reproduce the behavior with synthetic fixtures or approved non-production data. Redact logs at the
+source and keep customer rows out of source control, tickets, prompts, and local test databases.
+<!-- /profile -->
+<!-- profile:project-manager -->
+Route the request to the named data owner and ask for the smallest approved aggregate that answers
+the delivery question. Record the decision and continue planning without the identifiable records.
+<!-- /profile -->

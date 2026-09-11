@@ -1,0 +1,5 @@
+{
+  "install": {
+    "warehouse-mcp": "pipx install warehouse-mcp"
+  }
+}

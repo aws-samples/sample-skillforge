@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "sqlite-explorer": {
+      "command": "uvx",
+      "args": [
+        "--with",
+        "mcp<2",
+        "mcp-server-sqlite",
+        "--db-path",
+        "./warehouse.db"
+      ]
+    },
+    "warehouse-mcp": {
+      "command": "warehouse-mcp",
+      "args": [
+        "serve"
+      ],
+      "disabled": true
+    }
+  }
+}

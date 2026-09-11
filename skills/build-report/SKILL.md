@@ -30,6 +30,14 @@ Request an extract through the engagement contact and record its provenance — 
 which system, on what date. You do not query systems directly, so an extract with no recorded
 provenance cannot support a finding.
 <!-- /profile -->
+<!-- profile:engineer -->
+Use reproducible evidence: commands, tests, logs, or queries that another engineer can run. Separate
+what you observed from what you inferred, and keep the exact inputs needed to reproduce the result.
+<!-- /profile -->
+<!-- profile:project-manager -->
+Collect each status or figure from its accountable owner and record when it was confirmed. Do not
+turn an estimate, an unverified percentage, or “work started” into a completed outcome.
+<!-- /profile -->
 
 ## Never
 

@@ -109,7 +109,7 @@ def commit() -> str:
         return ""
 
 
-def build_skill(src: Path, dest: Path, persona: model.Persona, version: str,
+def build_skill(src: Path, dest: Path, persona: model.Persona, pack_name: str, version: str,
                 mapping: dict[str, str], root: Path) -> list[str]:
     """Write one resolved skill into the pack. Returns the constraint ids it bound."""
     dest.mkdir(parents=True, exist_ok=True)
@@ -130,7 +130,7 @@ def build_skill(src: Path, dest: Path, persona: model.Persona, version: str,
     head = re.sub(r"^name:.*$", f"name: {dest.name}", head, count=1, flags=re.M)
 
     banner = BANNER.format(persona=persona.id, display=persona.display_name,
-                           pack=persona.pack_name, version=version, skill=src.name,
+                           pack=pack_name, version=version, skill=src.name,
                            commit=commit())
     (dest / "SKILL.md").write_text(head + banner + body, encoding="utf-8")
 
@@ -152,7 +152,7 @@ def build_skill(src: Path, dest: Path, persona: model.Persona, version: str,
 
 
 def write_mcp(pack: Path, entitled: tuple[str, ...], groups: dict[str, model.McpGroup],
-              pack_name: str, version: str) -> dict:
+              pack_name: str, version: str, author: dict) -> dict:
     """Emit every MCP shape the four hosts need. Returns the manifest fragment."""
     eager = {n: s for g in entitled if groups[g].loading == "eager"
              for n, s in groups[g].servers.items()}
@@ -179,15 +179,18 @@ def write_mcp(pack: Path, entitled: tuple[str, ...], groups: dict[str, model.Mcp
             (pack / "mcp" / f"{gid}.json").write_text(
                 json.dumps({"mcpServers": group.servers}, indent=2) + "\n", encoding="utf-8")
             # Claude Code has no per-server toggle, so an opt-in group becomes its own companion
-            # plugin the user enables. defaultEnabled:false is what makes it opt-in.
-            companion = pack / "mcp-plugins" / f"mcp-{gid}"
+            # plugin the user enables. Include the pack name because two personas may derive the
+            # same group, and marketplace plugin names must remain unique.
+            companion_name = f"mcp-{gid}-{pack_name}"
+            companion = pack / "mcp-plugins" / companion_name
             (companion / ".claude-plugin").mkdir(parents=True, exist_ok=True)
             (companion / ".claude-plugin" / "plugin.json").write_text(json.dumps({
-                "name": f"mcp-{gid}",
+                "name": companion_name,
                 "version": version,
                 "description": (group.note or f"Opt-in MCP servers: {', '.join(group.servers)}.")
                                + (" Needs credentials, a VPN or a licence this pack cannot supply."
                                   if group.access == "restricted" else ""),
+                "author": author,
                 "mcpServers": "./.mcp.json",
             }, indent=2) + "\n", encoding="utf-8")
             (companion / ".mcp.json").write_text(
@@ -201,10 +204,9 @@ def write_mcp(pack: Path, entitled: tuple[str, ...], groups: dict[str, model.Mcp
 
 
 def build_pack(persona: model.Persona, out: Path, version: str, root: Path,
-               vertical: model.Vertical | None = None) -> dict:
+               author: dict, vertical: model.Vertical | None = None) -> dict:
     """Build one pack. Returns a summary dict."""
     groups = model.load_mcp_groups(root)
-    known = set(model.all_persona_ids(root))
 
     # Which skills: the persona's own (base pack), or the vertical's (vertical pack). Disjoint by
     # construction — a vertical-tagged skill is claimed by the vertical and must not appear in a
@@ -218,29 +220,34 @@ def build_pack(persona: model.Persona, out: Path, version: str, root: Path,
         if vid:
             tagged[d.name] = vid
 
+    available = {d.name for d in (root / "skills").iterdir() if d.is_dir()}
+    missing = sorted(set(persona.include_skills) - available)
+    if missing:
+        raise model.ModelError(
+            f"persona {persona.id!r} includes skill(s) that do not exist: {missing}. A "
+            f"declared-but-absent skill would ship a pack quietly missing it.")
+    base_wanted = [s for s in persona.include_skills if s not in tagged]
+
     if vertical:
         wanted = [s for s, v in tagged.items() if v == vertical.id]
         pack_name = f"vertical-{vertical.id}-{persona.id}"
+        reference_names = list(dict.fromkeys(base_wanted + wanted))
     else:
-        wanted = [s for s in persona.include_skills if s not in tagged]
-        missing = sorted(set(persona.include_skills) - {d.name for d in (root / "skills").iterdir()})
-        if missing:
-            raise model.ModelError(
-                f"persona {persona.id!r} includes skill(s) that do not exist: {missing}. A "
-                f"declared-but-absent skill would ship a pack quietly missing it.")
+        wanted = base_wanted
         pack_name = persona.pack_name
+        reference_names = wanted
 
     pack = out / pack_name
     if pack.exists():
         shutil.rmtree(pack)
     pack.mkdir(parents=True)
 
-    mapping = {s: prefixed(s, persona.prefix) for s in wanted}
+    mapping = {s: prefixed(s, persona.prefix) for s in reference_names}
     constraints: set[str] = set()
     for name in wanted:
         constraints.update(build_skill(root / "skills" / name,
                                        pack / "skills" / mapping[name],
-                                       persona, version, mapping, root))
+                                       persona, pack_name, version, mapping, root))
 
     # A vertical ships NO agents and no MCP: include_agents is a persona-level axis, and a
     # vertical's servers would already be entitled through the base pack it installs beside.
@@ -248,24 +255,26 @@ def build_pack(persona: model.Persona, out: Path, version: str, root: Path,
     fragment: dict = {}
     if vertical is None:
         entitled = model.derive_mcp_groups(persona, groups, root, resolve.resolve)
-        fragment = write_mcp(pack, entitled, groups, pack_name, version)
+        fragment = write_mcp(pack, entitled, groups, pack_name, version, author)
 
     manifest = {
         "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
         "name": pack_name,
         "version": version,
         "description": (vertical.description if vertical else persona.description),
+        "author": author,
         **fragment,
     }
     (pack / ".claude-plugin").mkdir(exist_ok=True)
     (pack / ".claude-plugin" / "plugin.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
-    return {"pack": pack_name, "skills": sorted(mapping.values()),
+    return {"pack": pack_name, "skills": sorted(mapping[name] for name in wanted),
             "mcp": list(entitled), "constraints": sorted(constraints)}
 
 
-def write_marketplaces(root: Path, out: Path, packs: list[str], version: str) -> None:
+def write_marketplaces(root: Path, out: Path, packs: list[str], version: str,
+                       author: dict, description: str) -> None:
     """The two marketplace files, GENERATED.
 
     Both Claude Code and Codex install a marketplace straight from a git repo — that is the whole
@@ -298,7 +307,8 @@ def write_marketplaces(root: Path, out: Path, packs: list[str], version: str) ->
     (root / ".claude-plugin").mkdir(exist_ok=True)
     (root / ".claude-plugin" / "marketplace.json").write_text(json.dumps({
         "name": root.name, "version": version,
-        "owner": {"name": "TODO: set an owner in .claude-plugin/marketplace.json"},
+        "description": description,
+        "owner": author,
         "plugins": entries,
     }, indent=2) + "\n", encoding="utf-8")
 
@@ -367,8 +377,11 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
     model.ROOT = root
     out = root / args.out
-    version = json.loads((root / "skillforge.json").read_text())["version"] \
-        if (root / "skillforge.json").is_file() else "0.0.0"
+    config = json.loads((root / "skillforge.json").read_text()) \
+        if (root / "skillforge.json").is_file() else {}
+    version = config.get("version", "0.0.0")
+    author = config.get("author") or {"name": "Skillforge contributors"}
+    description = config.get("description") or "Generated Skillforge packs."
 
     ids = model.all_persona_ids(root) if args.all else (args.persona or [])
     if not ids:
@@ -381,7 +394,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         for pid in ids:
             persona = model.load_persona(pid, root)
-            r = build_pack(persona, out, version, root)
+            r = build_pack(persona, out, version, root, author)
             quick = write_quick(out / r["pack"], version)
             built_packs.append(r["pack"])
             print(f"  {r['pack']:34} {len(r['skills']):3} skill(s)  "
@@ -392,10 +405,10 @@ def main(argv: list[str] | None = None) -> int:
                 if pid not in v.personas:
                     print(f"    · {vid}: not declared for {pid}, skipped")
                     continue
-                rv = build_pack(persona, out, version, root, vertical=v)
+                rv = build_pack(persona, out, version, root, author, vertical=v)
                 built_packs.append(rv["pack"])
                 print(f"    {rv['pack']:32} {len(rv['skills']):3} skill(s)")
-        write_marketplaces(root, out, built_packs, version)
+        write_marketplaces(root, out, built_packs, version, author, description)
         print(f"\n  marketplaces: .claude-plugin/marketplace.json and "
               f".agents/plugins/marketplace.json ({len(built_packs)} pack(s) + companions)")
     except model.ModelError as exc:

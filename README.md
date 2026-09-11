@@ -6,7 +6,8 @@ personas, your own policy rules, and optional domain add-ons.
 ```bash
 python3 -m skillforge build --all --vertical all   # generate the packs
 python3 -m skillforge validate                     # every gate
-python3 -m skillforge install --persona analyst    # Kiro; prints the Claude Code / Codex commands
+python3 -m skillforge install --persona analyst --vertical pci-dss
+                                                   # Kiro; prints Claude Code / Codex commands
 ```
 
 ## Why this exists
@@ -21,9 +22,9 @@ nothing:
 | MCP servers | plugin-level `.mcp.json` | `mcpServers` | agent's own block **and** global config | n/a |
 | Tool grants | explicit prefixed names; **wildcards match nothing** | none — no allowlist exists | `@server/*` wildcards, which **do** expand | `tools` |
 
-Maintain that by hand across two audiences and you have eight artefacts to keep in step. They drift,
-and the failures are silent: a server that connects and exposes nothing, a skill that ships one
-audience's rules to the other, a description the host truncated so the skill never fires.
+Maintain that by hand across several audiences and the artefacts multiply quickly. They drift, and
+the failures are silent: a server that connects and exposes nothing, a skill that ships one
+audience's rules to another, or a description the host truncated so the skill never fires.
 
 ## The model — four concepts
 
@@ -107,7 +108,8 @@ dist/analyst-pack/
   skills/an-*/                        every host
   .claude-plugin/plugin.json          Claude Code manifest
   .mcp.json                           Claude Code: eager servers
-  mcp-plugins/mcp-warehouse/          Claude Code: opt-in group as a companion plugin
+  mcp-plugins/mcp-warehouse-analyst-pack/
+                                      Claude Code: uniquely named opt-in companion
   mcp/kiro-mcp.json                   Kiro: all servers, opt-in ones `disabled: true`
   mcp/warehouse.json                  plain shape, any other tool
   quick/*.quick                       Amazon Quick: hoisted frontmatter
@@ -118,6 +120,9 @@ dist/analyst-pack/
 Both marketplaces are **generated**. Hand-kept, they drift from each other and from what the build
 emits — and a stale entry fails at *install* time, not build time.
 
+`dist/` is generated but intentionally checked in: Claude Code and Codex install from the pushed
+repository, where no build command runs before the marketplace resolves those paths.
+
 ## Distributing it
 
 Push the repo. Two of the four hosts install from it directly:
@@ -125,7 +130,7 @@ Push the repo. Two of the four hosts install from it directly:
 ```bash
 claude plugin marketplace add <owner>/<repo>   && claude plugin install analyst-pack
 codex  plugin marketplace add <owner>/<repo>   && codex  plugin add analyst-pack@<repo>
-python3 -m skillforge install --persona analyst   # Kiro
+python3 -m skillforge install --persona analyst --vertical pci-dss   # Kiro
 ```
 
 The marketplaces point at `dist/`, never the repo root — a skill with conditional blocks resolves
@@ -143,32 +148,150 @@ imports the folder.
 
 ## Installing safely
 
-Two rules the installer keeps, because breaking either destroys someone's setup:
+Three rules the installer keeps, because breaking them destroys someone's setup:
 
-**Personas swap.** Installing one removes the other.
+**Personas swap.** Installing one removes the other, including vertical variants built for the old
+persona.
+
+**Verticals add.** Select any number alongside the persona by repeating `--vertical`:
+
+```bash
+python3 -m skillforge install --persona analyst \
+  --vertical pci-dss \
+  --vertical another-domain
+```
+
+Use `--vertical all` to install every built vertical that declares the selected persona.
 
 **Your own MCP servers are never deleted.** Entries this tool created are marked and only those are
 removed. One that existed already is *adopted* — marked separately and restored to its original
-enabled state on uninstall. A tool that prints "your own were left alone" and isn't telling the truth
-is worse than one that says nothing.
+enabled state when the persona changes or on uninstall. A tool that prints "your own were left
+alone" and isn't telling the truth is worse than one that says nothing.
+
+On macOS and Linux, Kiro skills are symlinked by default. On Windows they are copied by default, so
+Developer Mode or administrator symlink privileges are not required. Use `--copy` or `--symlink` to
+override the platform default. The mode actually used is recorded for later updates.
+
+## Updating an installation
+
+Every successful install writes a non-secret receipt to `.skillforge/install.json`. The directory is
+gitignored, so the selection survives a pull without being committed. It records the persona,
+verticals, install mode, output directory, marketplace name, version, and the resolved Kiro skills
+and MCP paths. Use `--state <path>` on both `install` and `update` to keep it elsewhere.
+
+Inspect the recorded selection without changing anything:
+
+```bash
+python3 -m skillforge update --check
+```
+
+Pull, rebuild, validate, and reconcile the same installation:
+
+```bash
+# macOS / Linux
+./scripts/update.sh
+```
+
+```powershell
+# Windows PowerShell
+.\scripts\update.ps1
+```
+
+Both scripts use `git pull --ff-only`, so local changes or a diverged branch stop the update rather
+than creating an automatic merge. The Python command can also be run directly after a manual pull:
+
+```bash
+python3 -m skillforge update
+```
+
+Kiro is reapplied automatically, including copy-mode Windows installations and MCP reconciliation.
+When the receipt was created with the explicit `--host all` option, the updater also refreshes or
+installs the recorded Claude Code and Codex plugins through their native CLIs. Pass `--no-native` to
+print those commands without running them. Published plugin changes should also bump
+`skillforge.json`'s version so native plugin caches recognize the release.
 
 ## Getting started
 
 ```bash
 git clone <this repo> && cd skillforge
+python3 -m skillforge sync-harness --check
 python3 -m skillforge build --all --vertical all
 python3 -m skillforge validate
+python3 -m unittest discover -s tests -v
 ```
 
-Then replace the example content: two personas (`analyst`, `auditor` — deliberately in conflict), one
-constraint, one vertical, five skills, two MCP groups. It exists to be deleted once you have your own.
+The checked-in examples now include four personas (`analyst`, `auditor`, `project-manager`, and
+`engineer`), one constraint family, three verticals, nine skills, and two MCP groups. The project
+manager pairs with `project-delivery`; the engineer pairs with `software-engineering`:
+
+```bash
+python3 -m skillforge install --persona project-manager --vertical project-delivery
+python3 -m skillforge install --persona engineer --vertical software-engineering
+```
+
+They are examples to adapt or delete once you have your own content.
+
+## Authoring with Codex, Claude Code or Kiro
+
+The repository keeps one short instruction source in `AGENTS.md`. Claude Code imports it through
+`CLAUDE.md`; Codex and Kiro read it directly.
+
+Persona and vertical procedures live in the canonical
+`harness/skills/skillforge-authoring/` skill. Generated copies are checked in under:
+
+```
+.agents/skills/skillforge-authoring/   Codex
+.claude/skills/skillforge-authoring/   Claude Code
+.kiro/skills/skillforge-authoring/     Kiro
+```
+
+Kiro's default agent discovers the workspace skill automatically. If a project uses a custom Kiro
+agent, add `skill://.kiro/skills/skillforge-authoring/SKILL.md` to that agent's `resources` list.
+
+Edit only the canonical copy, then synchronize and verify:
+
+```bash
+python3 -m skillforge sync-harness
+python3 -m skillforge sync-harness --check
+```
+
+The skill routes persona, vertical, canonical-skill, and host-contract work to focused references so
+ordinary sessions carry only the short routing instructions.
+
+## Test layers
+
+`python3 -m unittest discover -s tests -v` covers:
+
+- adding a persona successfully and rejecting one missing conditional branches;
+- adding a vertical successfully and rejecting base/vertical collisions;
+- exact base and vertical skill inventories;
+- resolved names, constraints and conditional blocks;
+- Claude Code and Codex marketplace agreement;
+- Kiro MCP and install/swap safety;
+- JSON receipt replay, copy-mode updates, and Windows/Unix update entry points;
+- reproducible builds and synchronized harness instructions.
+
+The official `skills-ref` validator runs automatically when installed. Claude Code's strict plugin
+validator plus isolated local-marketplace installs in Claude Code and Codex are opt-in external
+gates:
+
+```bash
+SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 \
+  python3 -m unittest discover -s tests -p 'test_external_validators.py' -v
+```
+
+Host-neutral should-trigger and should-not-trigger cases live in
+`evals/skillforge-authoring.json` for replay in clean Codex, Claude Code and Kiro workspaces.
 
 ## Status
 
 **v0.1.0, early.** Working: the model, the build, all four host shapes, both marketplaces, Quick
-variants, the Kiro installer with adopt/restore, and the validator.
+variants, the Kiro installer with persona + vertical reconciliation and MCP adopt/restore, shared
+repository authoring instructions for Codex/Claude Code/Kiro, recorded cross-platform updates,
+contract tests, and the validator.
 
-Not built yet: agent generation with per-host tool grants, an eval runner, cross-host duplicate-skill
-detection, and a mutation harness that proves each gate fails when it should. Those matter — the
-per-host grant divergence in the table above is where most of the silent failures live — but skills,
-personas, verticals and constraints work on all four hosts today.
+Not built yet: agent generation with per-host tool grants, an automated runner for the checked-in
+eval cases, cross-host duplicate-skill detection, and a full mutation harness that proves every gate
+fails when it should. Those matter — the per-host grant divergence in the table above is where most
+of the silent failures live — but skills, personas, verticals and constraints work on all four hosts
+today.

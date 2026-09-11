@@ -1,0 +1,43 @@
+---
+name: pm-build-report
+description: Turn figures into a written report with a stated method and stated limitations. Use when the user asks for a report, summary, write-up, or something to send onward.
+metadata:
+  category: reporting
+  constraints: data-handling
+  quick_trigger: write me a report
+  quick_display_name: Build a report
+  quick_icon: chart
+---
+
+> Generated file — do not edit.
+> Persona: project-manager (Project manager)
+> Pack:    project-manager-pack v0.1.0
+> Source:  skill `build-report` @ ee70cb5
+> Edit the source skill, not this copy — this one is overwritten on every build.
+
+# Build a report
+
+## Boundaries that apply to this skill
+
+**Coordinate access; do not assume it.** Work from approved summaries, aggregates, and evidence
+provided by the accountable owner. Do not request identifiable customer records for planning or
+status reporting when an aggregate, synthetic example, or owner-confirmed result answers the
+question.
+
+
+## Structure
+
+1. **What was asked** — one sentence, in the requester's words.
+2. **What the figures say** — the numbers, each traceable to how it was produced.
+3. **What they do not say** — the limitations. This section is the one that makes the report
+   trustworthy, and the one most often dropped.
+4. **What to do next** — only if the figures support it.
+
+## Getting the figures
+
+Collect each status or figure from its accountable owner and record when it was confirmed. Do not
+turn an estimate, an unverified percentage, or “work started” into a completed outcome.
+
+## Never
+
+Do not round a figure to make a point, and do not present a projection as a measurement.

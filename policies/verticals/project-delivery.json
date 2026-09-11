@@ -1,0 +1,6 @@
+{
+  "id": "project-delivery",
+  "display_name": "Project delivery",
+  "description": "Planning and status-management workflows for project managers delivering a defined outcome.",
+  "personas": ["project-manager"]
+}

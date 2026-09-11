@@ -50,10 +50,65 @@
       }
     },
     {
-      "name": "mcp-warehouse",
+      "name": "engineer-pack",
       "source": {
         "source": "local",
-        "path": "./dist/analyst-pack/mcp-plugins/mcp-warehouse"
+        "path": "./dist/engineer-pack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "vertical-software-engineering-engineer",
+      "source": {
+        "source": "local",
+        "path": "./dist/vertical-software-engineering-engineer"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "project-manager-pack",
+      "source": {
+        "source": "local",
+        "path": "./dist/project-manager-pack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "vertical-project-delivery-project-manager",
+      "source": {
+        "source": "local",
+        "path": "./dist/vertical-project-delivery-project-manager"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "mcp-warehouse-analyst-pack",
+      "source": {
+        "source": "local",
+        "path": "./dist/analyst-pack/mcp-plugins/mcp-warehouse-analyst-pack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      }
+    },
+    {
+      "name": "mcp-warehouse-engineer-pack",
+      "source": {
+        "source": "local",
+        "path": "./dist/engineer-pack/mcp-plugins/mcp-warehouse-engineer-pack"
       },
       "policy": {
         "installation": "AVAILABLE",

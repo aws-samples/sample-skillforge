@@ -1,0 +1,9 @@
+{
+  "name": "mcp-warehouse-analyst-pack",
+  "version": "0.1.0",
+  "description": "The analytics warehouse. Needs a corporate SSO session, so it cannot start implicitly. Needs credentials, a VPN or a licence this pack cannot supply.",
+  "author": {
+    "name": "Skillforge contributors"
+  },
+  "mcpServers": "./.mcp.json"
+}

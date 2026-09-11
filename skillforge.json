@@ -1,1 +1,8 @@
-{ "name": "skillforge", "version": "0.1.0" }
+{
+  "name": "skillforge",
+  "version": "0.1.0",
+  "description": "Portable agent skills with personas, policy constraints, vertical add-ons, and host-specific packaging.",
+  "author": {
+    "name": "Skillforge contributors"
+  }
+}

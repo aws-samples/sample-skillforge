@@ -1,0 +1,9 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "vertical-pci-dss-auditor",
+  "version": "0.1.0",
+  "description": "Cardholder-data handling rules that install alongside a base pack. Additive: any number of verticals may be installed together.",
+  "author": {
+    "name": "Skillforge contributors"
+  }
+}
