@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1550" viewBox="0 0 1400 1550" role="img" aria-labelledby="title description">
+  <title id="title">Skillforge lifecycle from contributors to tested, host-specific installations</title>
+  <desc id="description">Four personas contribute canonical skills, policies, verticals and agents. A five-stage quality pipeline validates the source and generated packs. One persona pack plus compatible vertical packs is then delivered to Claude Code, Codex and Kiro, while Amazon Quick receives base-pack variants through manual import.</desc>
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7FAFF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="repoHeader" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#172B4D"/>
+      <stop offset="1" stop-color="#27466F"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#172B4D" flood-opacity="0.10"/>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#172B4D" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrowSlate" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#94A3B8"/>
+    </marker>
+    <marker id="arrowTeal" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0F9D8A"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#D98900"/>
+    </marker>
+    <style>
+      .font { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+      .title { font-size: 34px; font-weight: 750; fill: #172B4D; letter-spacing: -0.6px; }
+      .subtitle { font-size: 17px; fill: #52647A; }
+      .stage { font-size: 14px; font-weight: 750; letter-spacing: 1.2px; }
+      .card-title { font-size: 18px; font-weight: 720; fill: #172B4D; }
+      .body { font-size: 14px; fill: #52647A; }
+      .small { font-size: 12px; fill: #64748B; }
+      .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; fill: #334155; }
+      .white { fill: #FFFFFF; }
+      .navy { fill: #172B4D; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1550" fill="url(#page)"/>
+  <circle cx="1320" cy="70" r="105" fill="#E8F0FF" opacity="0.65"/>
+  <circle cx="1270" cy="35" r="46" fill="#D9E7FF" opacity="0.9"/>
+
+  <g class="font">
+    <g transform="translate(55 38)">
+      <path d="M20 0 L40 11.5 L40 34.5 L20 46 L0 34.5 L0 11.5 Z" fill="#3578E5"/>
+      <path d="M12 15 H28 L32 23 L28 31 H12 L8 23 Z" fill="#FFFFFF" opacity="0.96"/>
+      <circle cx="20" cy="23" r="4.5" fill="#3578E5"/>
+    </g>
+    <text x="115" y="66" class="title">Skillforge</text>
+    <text x="115" y="94" class="subtitle">One canonical skill library. Tested, persona-aware packs for every harness.</text>
+    <g transform="translate(965 52)">
+      <rect width="345" height="36" rx="18" fill="#172B4D"/>
+      <circle cx="20" cy="18" r="5" fill="#5EEAD4"/>
+      <text x="35" y="23" font-size="13" font-weight="700" fill="#FFFFFF">PERSONAS SWAP · VERTICALS ADD</text>
+    </g>
+
+    <rect x="50" y="125" width="1300" height="205" rx="22" fill="#F8FAFF" stroke="#C7D7FE" stroke-width="1.5"/>
+    <g transform="translate(76 148)">
+      <rect width="32" height="24" rx="12" fill="#3578E5"/>
+      <text x="16" y="17" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">01</text>
+      <text x="45" y="17" class="stage" fill="#2459B3">CONTRIBUTORS DEFINE PERSONAS AND DOMAIN INTENT</text>
+    </g>
+
+    <g filter="url(#softShadow)">
+      <rect x="85" y="190" width="280" height="112" rx="16" fill="#FFFFFF" stroke="#8CB5FF" stroke-width="1.5"/>
+      <rect x="395" y="190" width="280" height="112" rx="16" fill="#FFFFFF" stroke="#B6A5FF" stroke-width="1.5"/>
+      <rect x="705" y="190" width="280" height="112" rx="16" fill="#FFFFFF" stroke="#F7BF59" stroke-width="1.5"/>
+      <rect x="1015" y="190" width="280" height="112" rx="16" fill="#FFFFFF" stroke="#70D7C9" stroke-width="1.5"/>
+    </g>
+
+    <circle cx="125" cy="232" r="24" fill="#3578E5"/>
+    <text x="125" y="238" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">AN</text>
+    <text x="163" y="225" class="card-title">Data analyst</text>
+    <text x="163" y="247" class="body">Query, report, handle data</text>
+    <rect x="163" y="262" width="92" height="24" rx="12" fill="#FFF3D6"/>
+    <text x="209" y="279" text-anchor="middle" font-size="12" font-weight="700" fill="#9A5A00">+ PCI DSS</text>
+
+    <circle cx="435" cy="232" r="24" fill="#7A5AF8"/>
+    <text x="435" y="238" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">AU</text>
+    <text x="473" y="225" class="card-title">External auditor</text>
+    <text x="473" y="247" class="body">Read evidence, report findings</text>
+    <rect x="473" y="262" width="92" height="24" rx="12" fill="#FFF3D6"/>
+    <text x="519" y="279" text-anchor="middle" font-size="12" font-weight="700" fill="#9A5A00">+ PCI DSS</text>
+
+    <circle cx="745" cy="232" r="24" fill="#E39512"/>
+    <text x="745" y="238" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">PM</text>
+    <text x="783" y="225" class="card-title">Project manager</text>
+    <text x="783" y="247" class="body">Plans, status, risks, decisions</text>
+    <rect x="783" y="262" width="137" height="24" rx="12" fill="#FFF3D6"/>
+    <text x="851.5" y="279" text-anchor="middle" font-size="12" font-weight="700" fill="#9A5A00">+ Project delivery</text>
+
+    <circle cx="1055" cy="232" r="24" fill="#0F9D8A"/>
+    <text x="1055" y="238" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">EN</text>
+    <text x="1093" y="225" class="card-title">Software engineer</text>
+    <text x="1093" y="247" class="body">Design, build, test, review</text>
+    <rect x="1093" y="262" width="165" height="24" rx="12" fill="#E1F8F4"/>
+    <text x="1175.5" y="279" text-anchor="middle" font-size="12" font-weight="700" fill="#087A6B">+ Software engineering</text>
+
+    <path d="M225 302 V342 H700 V365" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowSlate)"/>
+    <path d="M535 302 V342 H700" fill="none" stroke="#94A3B8" stroke-width="2"/>
+    <path d="M845 302 V342 H700" fill="none" stroke="#94A3B8" stroke-width="2"/>
+    <path d="M1155 302 V342 H700" fill="none" stroke="#94A3B8" stroke-width="2"/>
+
+    <g filter="url(#shadow)">
+      <rect x="50" y="370" width="1300" height="260" rx="22" fill="#FFFFFF" stroke="#172B4D" stroke-width="1.5"/>
+    </g>
+    <path d="M72 370 H1328 Q1350 370 1350 392 V428 H50 V392 Q50 370 72 370 Z" fill="url(#repoHeader)"/>
+    <g transform="translate(76 387)">
+      <rect width="32" height="24" rx="12" fill="#FFFFFF" opacity="0.18"/>
+      <text x="16" y="17" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">02</text>
+      <text x="45" y="17" class="stage" fill="#FFFFFF">CANONICAL SKILLFORGE REPOSITORY — EDIT THIS LAYER, NOT DIST/</text>
+    </g>
+    <g transform="translate(1135 386)">
+      <rect width="170" height="26" rx="13" fill="#5EEAD4" opacity="0.17"/>
+      <text x="85" y="18" text-anchor="middle" font-size="12" font-weight="750" fill="#BFF7EE">SINGLE SOURCE OF TRUTH</text>
+    </g>
+
+    <g filter="url(#softShadow)">
+      <rect x="80" y="462" width="230" height="120" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <rect x="332" y="462" width="230" height="120" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <rect x="584" y="462" width="230" height="120" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <rect x="836" y="462" width="230" height="120" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <rect x="1088" y="462" width="230" height="120" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+    </g>
+
+    <rect x="98" y="480" width="42" height="42" rx="10" fill="#E8F0FF"/>
+    <path d="M109 491 H129 M109 499 H129 M109 507 H123" stroke="#3578E5" stroke-width="3" stroke-linecap="round"/>
+    <text x="98" y="545" class="mono">skills/*/SKILL.md</text>
+    <text x="98" y="566" class="small">Portable instructions</text>
+
+    <rect x="350" y="480" width="42" height="42" rx="10" fill="#F0EBFF"/>
+    <circle cx="371" cy="494" r="7" fill="#7A5AF8"/>
+    <path d="M358 513 Q371 501 384 513" fill="none" stroke="#7A5AF8" stroke-width="3" stroke-linecap="round"/>
+    <text x="350" y="545" class="mono">personas/*.json</text>
+    <text x="350" y="566" class="small">One swappable base pack</text>
+
+    <rect x="602" y="480" width="42" height="42" rx="10" fill="#FFF3D6"/>
+    <path d="M613 501 H633 M623 491 V511" stroke="#D98900" stroke-width="3" stroke-linecap="round"/>
+    <text x="602" y="545" class="mono">verticals/*.json</text>
+    <text x="602" y="566" class="small">Additive domain packs</text>
+
+    <rect x="854" y="480" width="42" height="42" rx="10" fill="#E1F8F4"/>
+    <path d="M866 510 L875 490 L884 510 M870 502 H880" fill="none" stroke="#0F9D8A" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="854" y="545" class="mono">agents/*.json</text>
+    <text x="854" y="566" class="small">Four explicit host grants</text>
+
+    <rect x="1106" y="480" width="42" height="42" rx="10" fill="#FFE8E4"/>
+    <path d="M1117 491 V511 M1128 491 V511 M1139 491 V511" stroke="#E05A47" stroke-width="3" stroke-linecap="round"/>
+    <text x="1106" y="545" class="mono">constraints/ + harness/</text>
+    <text x="1106" y="566" class="small">Policy + author guidance</text>
+
+    <path d="M700 630 V668" fill="none" stroke="#0F9D8A" stroke-width="3" marker-end="url(#arrowTeal)"/>
+
+    <rect x="50" y="675" width="1300" height="240" rx="22" fill="#F0FDFA" stroke="#99E2D8" stroke-width="1.5"/>
+    <g transform="translate(76 698)">
+      <rect width="32" height="24" rx="12" fill="#0F9D8A"/>
+      <text x="16" y="17" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">03</text>
+      <text x="45" y="17" class="stage" fill="#087A6B">BUILD AND QUALITY PIPELINE — EVERY GATE RUNS, EVEN WHEN AN EARLIER ONE FAILS</text>
+    </g>
+
+    <g filter="url(#softShadow)">
+      <rect x="80" y="755" width="220" height="112" rx="14" fill="#FFFFFF" stroke="#70D7C9"/>
+      <rect x="335" y="755" width="220" height="112" rx="14" fill="#FFFFFF" stroke="#70D7C9"/>
+      <rect x="590" y="755" width="220" height="112" rx="14" fill="#FFFFFF" stroke="#70D7C9"/>
+      <rect x="845" y="755" width="220" height="112" rx="14" fill="#FFFFFF" stroke="#70D7C9"/>
+      <rect x="1100" y="755" width="220" height="112" rx="14" fill="#FFFFFF" stroke="#70D7C9"/>
+    </g>
+
+    <circle cx="108" cy="783" r="15" fill="#0F9D8A"/><text x="108" y="788" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">1</text>
+    <text x="132" y="788" class="card-title">Sync harness</text>
+    <text x="100" y="819" class="mono">sync-harness --check</text>
+    <text x="100" y="842" class="small">Claude, Codex, Kiro copies</text>
+
+    <circle cx="363" cy="783" r="15" fill="#0F9D8A"/><text x="363" y="788" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">2</text>
+    <text x="387" y="788" class="card-title">Build matrix</text>
+    <text x="355" y="819" class="mono">build --all</text>
+    <text x="355" y="842" class="small">Every persona × vertical</text>
+
+    <circle cx="618" cy="783" r="15" fill="#0F9D8A"/><text x="618" y="788" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">3</text>
+    <text x="642" y="788" class="card-title">Validate</text>
+    <text x="610" y="819" class="mono">validate</text>
+    <text x="610" y="842" class="small">9 source + pack gates</text>
+
+    <circle cx="873" cy="783" r="15" fill="#0F9D8A"/><text x="873" y="788" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">4</text>
+    <text x="897" y="788" class="card-title">Harness evals</text>
+    <text x="865" y="819" class="mono">eval</text>
+    <text x="865" y="842" class="small">Trigger + skip routes × 3</text>
+
+    <circle cx="1128" cy="783" r="15" fill="#0F9D8A"/><text x="1128" y="788" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">5</text>
+    <text x="1152" y="788" class="card-title">Prove failure</text>
+    <text x="1120" y="819" class="mono">mutate-test + unit</text>
+    <text x="1120" y="842" class="small">Linux · macOS · Windows</text>
+
+    <path d="M300 811 H327" stroke="#0F9D8A" stroke-width="2" marker-end="url(#arrowTeal)"/>
+    <path d="M555 811 H582" stroke="#0F9D8A" stroke-width="2" marker-end="url(#arrowTeal)"/>
+    <path d="M810 811 H837" stroke="#0F9D8A" stroke-width="2" marker-end="url(#arrowTeal)"/>
+    <path d="M1065 811 H1092" stroke="#0F9D8A" stroke-width="2" marker-end="url(#arrowTeal)"/>
+    <circle cx="540" cy="889" r="4" fill="#0F9D8A"/>
+    <text x="555" y="894" font-size="13" fill="#087A6B">Format, profile, grant, MCP, collision and built-pack contracts must all agree.</text>
+
+    <path d="M700 915 V952" fill="none" stroke="#D98900" stroke-width="3" marker-end="url(#arrowAmber)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="50" y="960" width="600" height="215" rx="22" fill="#FFF9ED" stroke="#F4BE58" stroke-width="1.5"/>
+      <rect x="750" y="960" width="600" height="215" rx="22" fill="#FFF9ED" stroke="#F4BE58" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(76 983)">
+      <rect width="36" height="24" rx="12" fill="#D98900"/>
+      <text x="18" y="17" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">04A</text>
+      <text x="49" y="17" class="stage" fill="#8A5200">BASE PERSONA PACKS — CHOOSE EXACTLY ONE</text>
+    </g>
+    <g transform="translate(776 983)">
+      <rect width="36" height="24" rx="12" fill="#D98900"/>
+      <text x="18" y="17" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">04B</text>
+      <text x="49" y="17" class="stage" fill="#8A5200">VERTICAL ADD-ONS — CHOOSE ZERO OR MORE</text>
+    </g>
+
+    <rect x="80" y="1030" width="250" height="48" rx="12" fill="#FFFFFF" stroke="#F1CC82"/>
+    <circle cx="103" cy="1054" r="8" fill="#3578E5"/><text x="120" y="1060" class="body" font-weight="700">analyst-pack</text>
+    <rect x="350" y="1030" width="270" height="48" rx="12" fill="#FFFFFF" stroke="#F1CC82"/>
+    <circle cx="373" cy="1054" r="8" fill="#7A5AF8"/><text x="390" y="1060" class="body" font-weight="700">auditor-pack</text>
+    <rect x="80" y="1092" width="250" height="48" rx="12" fill="#FFFFFF" stroke="#F1CC82"/>
+    <circle cx="103" cy="1116" r="8" fill="#E39512"/><text x="120" y="1122" class="body" font-weight="700">project-manager-pack</text>
+    <rect x="350" y="1092" width="270" height="48" rx="12" fill="#FFFFFF" stroke="#F1CC82"/>
+    <circle cx="373" cy="1116" r="8" fill="#0F9D8A"/><text x="390" y="1122" class="body" font-weight="700">engineer-pack</text>
+    <text x="80" y="1160" class="small">Skills + persona agents, MCP and host metadata where declared</text>
+
+    <rect x="780" y="1030" width="540" height="38" rx="10" fill="#FFFFFF" stroke="#F1CC82"/>
+    <text x="798" y="1055" class="body"><tspan font-weight="700">PCI DSS</tspan><tspan>  → analyst + auditor variants</tspan></text>
+    <rect x="780" y="1078" width="540" height="38" rx="10" fill="#FFFFFF" stroke="#F1CC82"/>
+    <text x="798" y="1103" class="body"><tspan font-weight="700">Project delivery</tspan><tspan>  → project-manager variant</tspan></text>
+    <rect x="780" y="1118" width="540" height="36" rx="10" fill="#FFFFFF" stroke="#F1CC82"/>
+    <text x="798" y="1142" class="body"><tspan font-weight="700">Software engineering</tspan><tspan>  → engineer variant</tspan></text>
+    <text x="780" y="1170" class="small">Skills-only add-ons; agents and MCP remain persona-level</text>
+
+    <circle cx="700" cy="1068" r="30" fill="#FFFFFF" stroke="#D98900" stroke-width="2"/>
+    <text x="700" y="1078" text-anchor="middle" font-size="34" font-weight="700" fill="#D98900">+</text>
+
+    <rect x="230" y="1190" width="720" height="62" rx="16" fill="#172B4D" filter="url(#softShadow)"/>
+    <text x="590" y="1217" text-anchor="middle" font-size="15" font-weight="750" fill="#FFFFFF">RESOLVED INSTALL SET FOR CLAUDE CODE, CODEX AND KIRO</text>
+    <text x="590" y="1239" text-anchor="middle" font-size="13" fill="#C9D7EA">1 base + compatible add-ons · prefixed names · injected constraints · no raw profile blocks</text>
+    <path d="M350 1175 V1190" fill="none" stroke="#D98900" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+    <path d="M1050 1175 V1190" fill="none" stroke="#D98900" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+
+    <path d="M620 1140 V1180 H1140 V1190" fill="none" stroke="#E05A47" stroke-width="2" stroke-dasharray="6 5"/>
+    <rect x="980" y="1190" width="320" height="62" rx="16" fill="#FFF2F0" stroke="#F0A59B" stroke-width="1.5"/>
+    <text x="1140" y="1217" text-anchor="middle" font-size="14" font-weight="750" fill="#963B2F">AMAZON QUICK: BASE VARIANTS ONLY</text>
+    <text x="1140" y="1239" text-anchor="middle" font-size="12" fill="#B34E41">Vertical Quick variants are not emitted today</text>
+
+    <path d="M370 1252 V1280" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowSlate)"/>
+    <path d="M590 1252 V1265 H535 V1280" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowSlate)"/>
+    <path d="M810 1252 V1265 H868 V1280" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowSlate)"/>
+    <path d="M1140 1252 V1280" fill="none" stroke="#E05A47" stroke-width="2" marker-end="url(#arrowSlate)"/>
+
+    <rect x="50" y="1258" width="32" height="22" rx="11" fill="#64748B"/>
+    <text x="66" y="1274" text-anchor="middle" font-size="11" font-weight="800" fill="#FFFFFF">05</text>
+    <text x="92" y="1274" class="stage" fill="#52647A">HOST-SPECIFIC DELIVERY AND INSTALLATION</text>
+
+    <g filter="url(#softShadow)">
+      <rect x="50" y="1285" width="300" height="155" rx="18" fill="#F5F3FF" stroke="#9F8BFA" stroke-width="1.5"/>
+      <rect x="383" y="1285" width="300" height="155" rx="18" fill="#EEF4FF" stroke="#8CB5FF" stroke-width="1.5"/>
+      <rect x="716" y="1285" width="300" height="155" rx="18" fill="#F0FDFA" stroke="#70D7C9" stroke-width="1.5"/>
+      <rect x="1049" y="1285" width="300" height="155" rx="18" fill="#FFF2F0" stroke="#F0A59B" stroke-width="1.5"/>
+    </g>
+    <text x="75" y="1320" font-size="16" font-weight="800" fill="#4D36B0">CLAUDE CODE</text>
+    <text x="75" y="1350" class="body">Marketplace plugin</text>
+    <text x="75" y="1374" class="body">Markdown custom agents</text>
+    <text x="75" y="1398" class="body">Eager + opt-in MCP companions</text>
+    <rect x="272" y="1301" width="58" height="24" rx="12" fill="#7A5AF8"/><text x="301" y="1318" text-anchor="middle" font-size="11" font-weight="750" fill="#FFFFFF">GIT</text>
+
+    <text x="408" y="1320" font-size="16" font-weight="800" fill="#2459B3">CODEX</text>
+    <text x="408" y="1350" class="body">Marketplace plugin</text>
+    <text x="408" y="1374" class="body">TOML custom agents</text>
+    <text x="408" y="1398" class="body">Sandbox + web-search policy</text>
+    <rect x="605" y="1301" width="58" height="24" rx="12" fill="#3578E5"/><text x="634" y="1318" text-anchor="middle" font-size="11" font-weight="750" fill="#FFFFFF">GIT</text>
+
+    <text x="741" y="1320" font-size="16" font-weight="800" fill="#087A6B">KIRO</text>
+    <text x="741" y="1350" class="body">Local reconciliation</text>
+    <text x="741" y="1374" class="body">JSON agents + MCP config</text>
+    <text x="741" y="1398" class="body">Windows defaults to safe copies</text>
+    <rect x="903" y="1301" width="93" height="24" rx="12" fill="#0F9D8A"/><text x="949.5" y="1318" text-anchor="middle" font-size="11" font-weight="750" fill="#FFFFFF">LOCAL</text>
+
+    <text x="1074" y="1320" font-size="16" font-weight="800" fill="#963B2F">AMAZON QUICK</text>
+    <text x="1074" y="1350" class="body">Manual .quick + JSON import</text>
+    <text x="1074" y="1374" class="body">Base-pack variants only</text>
+    <text x="1074" y="1398" class="body">Quit and relaunch after import</text>
+    <rect x="1240" y="1301" width="89" height="24" rx="12" fill="#E05A47"/><text x="1284.5" y="1318" text-anchor="middle" font-size="11" font-weight="750" fill="#FFFFFF">MANUAL</text>
+
+    <path d="M866 1440 V1465" fill="none" stroke="#172B4D" stroke-width="2.5" marker-end="url(#arrowSlate)"/>
+    <rect x="50" y="1470" width="1300" height="60" rx="15" fill="#172B4D"/>
+    <circle cx="82" cy="1500" r="12" fill="#5EEAD4"/>
+    <path d="M76 1500 L81 1505 L89 1495" fill="none" stroke="#172B4D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="105" y="1496" font-size="14" font-weight="800" fill="#FFFFFF">RECORDED, REPEATABLE UPDATES</text>
+    <text x="105" y="1517" font-size="13" fill="#C9D7EA">.skillforge/install.json stores persona, verticals, paths and mode · update.sh / update.ps1 pull, rebuild, validate and replay the selection</text>
+  </g>
+</svg>

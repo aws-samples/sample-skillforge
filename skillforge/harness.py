@@ -95,17 +95,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         problems = check(root)
         if problems:
-            print("✗ harness authoring skill is out of sync:", file=sys.stderr)
+            print("ERROR: harness authoring skill is out of sync:", file=sys.stderr)
             for problem in problems:
                 print(f"  - {problem}", file=sys.stderr)
             return 1
-        print("✓ harness authoring skill copies match the canonical source")
+        print("OK: harness authoring skill copies match the canonical source")
         return 0
 
     try:
         destinations = sync(root)
     except model.ModelError as exc:
-        print(f"✗ {exc}", file=sys.stderr)
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     print(f"synced {CANONICAL.as_posix()} to:")
     for destination in destinations:

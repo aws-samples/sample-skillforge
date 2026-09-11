@@ -1,0 +1,81 @@
+@startuml
+title Skillforge lifecycle
+top to bottom direction
+
+skinparam backgroundColor #F7F9FC
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam defaultFontName Arial
+skinparam defaultFontColor #172B4D
+skinparam ArrowColor #64748B
+skinparam packageBorderColor #CBD5E1
+skinparam packageBackgroundColor #FFFFFF
+
+package "1. Contributors define intent" as authors #EEF4FF {
+  rectangle "Data analyst\npersona + PCI DSS" as analyst
+  rectangle "External auditor\npersona + PCI DSS" as auditor
+  rectangle "Project manager\npersona + project delivery" as pm
+  rectangle "Software engineer\npersona + software engineering" as engineer
+}
+
+package "2. Canonical Skillforge repository" as source #FFFFFF {
+  rectangle "skills/*/SKILL.md\nportable instructions" as skills
+  rectangle "policies/personas/*.json\none swappable base persona" as personas
+  rectangle "policies/verticals/*.json\nadditive domain packs" as verticals
+  rectangle "agents/*.json\ninstructions + four host grants" as agents
+  rectangle "constraints/ + harness/\npolicy + authoring guidance" as policy
+}
+
+package "3. Build and quality pipeline" as quality #F0FDFA {
+  rectangle "sync-harness --check" as sync
+  rectangle "build --all\n--vertical all" as build
+  rectangle "validate\nnine gates" as validate
+  rectangle "eval\nthree coding harnesses" as eval
+  rectangle "mutate-test + unit tests\nLinux, macOS, Windows" as tests
+  sync --> build
+  build --> validate
+  validate --> eval
+  eval --> tests
+}
+
+package "4. Generated distribution" as distribution #FFF7E6 {
+  rectangle "Exactly one base persona pack\nanalyst | auditor | project-manager | engineer" as base
+  rectangle "Zero or more compatible vertical packs\nPCI DSS | project delivery | software engineering" as addons
+  rectangle "Resolved install set\nprefixed names + constraints + no raw profile blocks" as resolved
+  base --> resolved
+  addons --> resolved
+}
+
+package "5. Host-specific delivery" as hosts #F5F3FF {
+  rectangle "Claude Code\nmarketplace + Markdown agents + MCP companions" as claude
+  rectangle "Codex\nmarketplace + TOML agents + sandbox policy" as codex
+  rectangle "Kiro\nlocal reconcile + JSON agents + MCP\nWindows copies by default" as kiro
+  rectangle "Amazon Quick\nmanual base-pack .quick + JSON import\nrelaunch required" as quick
+}
+
+rectangle ".skillforge/install.json\nupdate.sh and update.ps1 replay the recorded selection" as receipt #172B4D
+
+analyst --> personas
+auditor --> personas
+pm --> personas
+engineer --> personas
+analyst --> verticals
+auditor --> verticals
+pm --> verticals
+engineer --> verticals
+
+skills --> sync
+personas --> sync
+verticals --> sync
+agents --> sync
+policy --> sync
+tests --> base
+tests --> addons
+resolved --> claude
+resolved --> codex
+resolved --> kiro
+base --> quick
+claude --> receipt
+codex --> receipt
+kiro --> receipt
+@enduml

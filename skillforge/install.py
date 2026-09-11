@@ -626,7 +626,7 @@ def main(argv: list[str] | None = None) -> int:
                     Path(receipt.codex_config),
                 )
         except model.ModelError as exc:
-            print(f"✗ {exc}", file=sys.stderr)
+            print(f"ERROR: {exc}", file=sys.stderr)
             return 1
         removed_receipt = state.remove(state_file)
         print(f"Kiro: removed {r['removed']} skill(s), {r['mcp_deleted']} server(s) this tool "
@@ -688,7 +688,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         state.write(state_file, receipt)
     except model.ModelError as exc:
-        print(f"✗ {exc}", file=sys.stderr)
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
     print(f"Kiro: {r['linked']} skill(s) {'linked' if use_symlink else 'copied'} into "

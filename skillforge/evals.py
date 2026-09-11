@@ -217,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
     data, problems = load_suite(path)
     if data is None or problems:
         for problem in problems:
-            print(f"✗ {problem}", file=sys.stderr)
+            print(f"ERROR: {problem}", file=sys.stderr)
         return 1
 
     selected = list(dict.fromkeys(args.harness or data["harnesses"]))
@@ -235,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
             if result.detail and not result.passed:
                 print(f"        {result.detail}")
         passed = sum(result.passed for result in results)
-        print(f"\n{'✓' if passed == len(results) else '✗'} "
+        print(f"\n{'OK:' if passed == len(results) else 'ERROR:'} "
               f"{passed}/{len(results)} harness eval(s) passed")
     return 0 if all(result.passed for result in results) else 1
 

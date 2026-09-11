@@ -189,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
 
         print("Checking source before rebuilding...")
         if validate.main(["--root", str(root), "--out", receipt.out, "--fast"]):
-            print("✗ update stopped before changing the built packs", file=sys.stderr)
+            print("ERROR: update stopped before changing the built packs", file=sys.stderr)
             return 1
 
         print("\nRebuilding every persona and vertical...")
@@ -199,12 +199,12 @@ def main(argv: list[str] | None = None) -> int:
             "--all",
             "--vertical", "all",
         ]):
-            print("✗ update stopped because the build failed", file=sys.stderr)
+            print("ERROR: update stopped because the build failed", file=sys.stderr)
             return 1
 
         print("\nValidating the rebuilt distribution...")
         if validate.main(["--root", str(root), "--out", receipt.out]):
-            print("✗ update stopped because the rebuilt packs failed validation",
+            print("ERROR: update stopped because the rebuilt packs failed validation",
                   file=sys.stderr)
             return 1
 
@@ -225,7 +225,7 @@ def main(argv: list[str] | None = None) -> int:
         state.write(receipt_file, updated)
 
         print(
-            f"\n✓ Kiro updated: {result['linked']} skill(s) installed from "
+            f"\nOK: Kiro updated: {result['linked']} skill(s) installed from "
             f"{', '.join(result['packs'])}; removed {result['removed']} stale skill(s)")
         if result["agents_installed"] or result["agents_removed"]:
             print(f"  Kiro agents: installed {result['agents_installed']}, removed "
@@ -247,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
             print("  Restart each harness after its update completes.")
         return 0
     except model.ModelError as exc:
-        print(f"✗ {exc}", file=sys.stderr)
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     finally:
         model.ROOT = prior_root

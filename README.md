@@ -1,210 +1,311 @@
 # Skillforge
 
-Write agent skills once. Ship them to **Claude Code, Codex, Kiro and Amazon Quick** — with your own
-personas, your own policy rules, and optional domain add-ons.
+Skillforge is a build and distribution system for portable agent skills. Teams keep skills,
+personas, policy constraints, vertical add-ons, and agent permissions in one repository; Skillforge
+resolves that source into tested packages for **Claude Code, Codex, Kiro, and Amazon Quick**.
+
+> **Personas swap. Verticals add.**
+>
+> A user selects exactly one persona pack and may add any number of compatible vertical packs.
+
+![Skillforge lifecycle: contributors, canonical source, quality gates, generated packs, and host-specific installation](docs/diagrams/skillforge-lifecycle.svg)
+
+Editable diagram sources:
+[Mermaid](docs/diagrams/skillforge-lifecycle.mmd) ·
+[PlantUML](docs/diagrams/skillforge-lifecycle.puml) ·
+[D2](docs/diagrams/skillforge-lifecycle.d2) ·
+[draw.io](docs/diagrams/skillforge-lifecycle.drawio) ·
+[ASCII](docs/diagrams/skillforge-lifecycle.txt) ·
+[PNG](docs/diagrams/skillforge-lifecycle.png) ·
+[PDF](docs/diagrams/skillforge-lifecycle.pdf)
+
+## What Skillforge does
+
+Skillforge turns a canonical repository into a distribution matrix:
+
+1. Contributors define reusable skills, personas, verticals, constraints, and agents.
+2. The build resolves persona-specific branches, injects applicable constraints, prefixes names,
+   and generates one base pack per persona plus one pack per compatible persona/vertical pair.
+3. Validation checks both the source and the files that will actually be installed.
+4. Harness evaluations verify that Claude Code, Codex, and Kiro discover the repository authoring
+   skill for the right prompts.
+5. Mutation tests deliberately break each validation contract and prove that every gate rejects
+   the defect.
+6. Host-specific installers and marketplaces deliver the selected packs without overwriting
+   user-owned configuration.
+
+This is useful when the same capability must behave differently for different audiences or
+domains, while still being maintained and reviewed as one body of source.
+
+## Quick start
+
+The core CLI uses the Python standard library. Run it from the repository root with Python 3.11 or
+newer.
 
 ```bash
-python3 -m skillforge build --all --vertical all   # generate the packs
-python3 -m skillforge validate                     # every gate
-python3 -m skillforge eval                         # checked-in harness routes
-python3 -m skillforge mutate-test                  # prove every gate rejects a defect
-python3 -m skillforge install --persona analyst --vertical pci-dss
-                                                   # Kiro; prints Claude Code / Codex commands
+git clone https://github.com/aws-samples/sample-skillforge.git
+cd sample-skillforge
+
+python3 -m skillforge sync-harness --check
+python3 -m skillforge build --all --vertical all
+python3 -m skillforge validate
+python3 -m skillforge eval
+python3 -m skillforge mutate-test
+python3 -m unittest discover -s tests -v
 ```
 
-## Why this exists
+On Windows PowerShell, use `py -3` in place of `python3`:
 
-Writing a skill is easy. Shipping it is not, and the reason is that the hosts agree on almost
-nothing:
+```powershell
+py -3 -m skillforge build --all --vertical all
+py -3 -m skillforge validate
+py -3 -m skillforge eval
+py -3 -m skillforge mutate-test
+py -3 -m unittest discover -s tests -v
+```
 
-| | Claude Code | Codex | Kiro | Amazon Quick |
-|---|---|---|---|---|
-| Skills | `skills/<name>/SKILL.md` | same | same | **top-level `trigger`, `icon`** — which the spec forbids |
-| Install | `marketplace add` from git | `marketplace add` from git | no marketplace | manual import |
-| MCP servers | plugin-level `.mcp.json` | `mcpServers` | agent's own block **and** global config | n/a |
-| Tool grants | explicit prefixed names; **wildcards match nothing** | none — no allowlist exists | `@server/*` wildcards, which **do** expand | `tools` |
+The generated distribution is written to `dist/`. It is intentionally checked into Git because
+Claude Code and Codex install directly from the repository; no build runs while their marketplaces
+resolve a package.
 
-Maintain that by hand across several audiences and the artefacts multiply quickly. They drift, and
-the failures are silent: a server that connects and exposes nothing, a skill that ships one
-audience's rules to another, or a description the host truncated so the skill never fires.
+## The five source concepts
 
-## The model — five concepts
+| Concept | Canonical location | Purpose |
+|---|---|---|
+| Skill | `skills/<name>/SKILL.md` | Portable instructions following the Agent Skills format |
+| Persona | `policies/personas/<id>.json` | A swappable audience pack, its prefix, base skills, router, and agents |
+| Vertical | `policies/verticals/<id>.json` plus tagged skills | Additive domain, industry, product, or compliance content |
+| Constraint | `policies/constraints/<id>/<persona>.md` | Persona-specific boundaries injected into every skill that binds the constraint |
+| Agent | `agents/<id>.json` | Persona-level instructions and explicit native grants for all four hosts |
 
-**Skills** are ordinary `skills/<name>/SKILL.md`, to the [Agent Skills](https://agentskills.io)
-standard. Portable by construction.
+### Personas swap
 
-**Agents** are persona-level orchestrators under `agents/<id>.json`. One definition carries
-instructions plus explicit native grants for every host: exact Claude Code tools, a Codex sandbox
-and web-search policy, Kiro `tools`/`allowedTools`, and Quick tools. There are no grant defaults; a
-missing host fails validation instead of inheriting broad access.
+A persona defines the user's working role and base catalogue. Installing `engineer-pack` after
+`project-manager-pack` removes the managed project-manager selection rather than leaving
+contradictory copies installed together.
 
-**Personas swap.** An audience with its own rules. One source, N packs — and because two personas
-can hold *mutually exclusive* instructions for the same skill, only one may be installed at a time.
-The installer enforces that.
+### Verticals add
 
-**Verticals add.** Optional domain content — a compliance regime, a regulated industry, a product
-line. Tag a skill `metadata.vertical: pci-dss` and it leaves every base pack for
-`dist/vertical-pci-dss-<persona>/`, installable *alongside*. Any number can be installed together.
+A vertical contributes optional skills beside the selected persona. For example,
+`software-engineering` adds design and review workflows to the engineer without duplicating the
+engineer's base skills, agents, or MCP configuration.
 
-**Constraints** are policy text written once and injected into every skill that binds it. Tag
-`metadata.constraints: data-handling` and one edit updates every skill. This is how a compliance
-owner owns a rule without touching forty files.
+A vertical-tagged skill must never also appear in a persona's `include_skills`. Every host flattens
+installed skills into one namespace, so that duplication would cause one copy to hide the other.
+The validator rejects it.
 
-### Personas swap, verticals add
+### Constraints centralize policy
 
-That distinction drives everything else. It is also why a vertical-tagged skill must **not** appear
-in a persona's `include_skills`: verticals install beside the base pack in one flat namespace, so one
-would silently overwrite the other and the loser is invisible. The validator rejects it.
+Use a constraint when the work is the same but its boundaries differ by persona. One policy change
+then updates every bound skill at build time.
 
-## Two ways for a skill to differ by persona
+### Conditional blocks change the work
 
-**A constraint** prepends a boundaries section. Use it when the *work* is the same and the *rules*
-differ.
-
-**A conditional block** changes an instruction in place. Use it when the *work* differs:
+Use profile blocks only when the actual procedure differs:
 
 ```markdown
 <!-- profile:analyst -->
-Pull the figures yourself with `query-warehouse`.
+Pull the figures with `query-warehouse`.
 <!-- /profile -->
 <!-- profile:auditor -->
-Request an extract through the engagement contact and record its provenance.
+Request an approved extract and record its provenance.
 <!-- /profile -->
 ```
 
-Reach for a constraint first. Injection alone would produce a file that forbids an action and then
-explains how to perform it.
+Every conditional group must name every persona, including explicit empty branches. A missing
+branch is treated as an authoring error. Profile markers are resolved during the build and are
+forbidden in generated packs.
 
-**Every group must name every persona.** One that should receive nothing gets an *explicit empty
-block* — an absent block is indistinguishable from a forgotten one, and the persona it was forgotten
-for silently receives nothing. Markers inside fenced code are documentation and ignored, which is why
-the example above is safe to sit in this README.
+### Agents make host permissions explicit
 
-**Frontmatter cannot vary by persona.** It is copied verbatim into every pack. So `description` must
-be true for *all* of them — and it is the field that drives activation, so a description promising
-what only one branch delivers makes the skill fire on a request the reader's own copy then declines.
-No gate can catch that; it is a review question.
+One canonical agent generates four native shapes:
 
-## MCP: entitlement is derived, not declared
+- Claude Code Markdown with an exact tool allowlist;
+- Codex TOML with sandbox and web-search policy;
+- Kiro JSON with `tools` and `allowedTools`;
+- Amazon Quick JSON with its supported tools.
 
-A persona gets a server group only if its own skills or agents **name** the server. There is no `mcp`
-key in a persona file, and the loader **raises** if one appears.
+There are no broad default grants. If a canonical agent omits a host, validation fails.
 
-```
-mcp/warehouse.json     access: restricted   loading: opt-in
-```
+## Included example matrix
 
-Two axes, no defaults:
+The repository includes four example personas and three verticals:
 
-- **`access`** — `open`, or `restricted` for anything needing a credential, VPN or licence this tool
-  cannot supply. Restricted **must** be opt-in.
-- **`loading`** — `eager` starts with the session; `opt-in` ships switched off.
+| Persona | Base pack | Canonical agent | Compatible vertical | Generated vertical pack |
+|---|---|---|---|---|
+| Data analyst | `analyst-pack` | — | PCI DSS | `vertical-pci-dss-analyst` |
+| External auditor | `auditor-pack` | — | PCI DSS | `vertical-pci-dss-auditor` |
+| Project manager | `project-manager-pack` | `project-manager` | Project delivery | `vertical-project-delivery-project-manager` |
+| Software engineer | `engineer-pack` | `software-engineer` | Software engineering | `vertical-software-engineering-engineer` |
 
-`loading` exists because a `mcpServers` entry in a Claude Code plugin manifest is **plugin-level**:
-everything reachable from it connects at session start and stays connected regardless of which skill
-runs. There is no per-skill lifecycle. Put a CRM server in the eager group and every user gets an
-authenticated CRM connection while doing something unrelated.
+These are working examples to adapt or replace with your own content.
 
-**The one risk worth knowing: a prose mention entitles.** Matching cannot tell "use this server" from
-"we deliberately do not use this server."
+## What the build generates
 
-## What the build emits
+For a base persona pack:
 
-```
+```text
 dist/engineer-pack/
-  skills/eng-*/                       every host
-  agents/eng-*.md                     Claude Code plugin agents
-  agents/codex/eng-*.toml             Codex custom-agent profiles
-  agents/kiro/eng-*.json              Kiro custom agents
-  agents/quick/eng-*.json             Amazon Quick agent imports
-  agents/manifest.json                cross-host names and grants
-  .claude-plugin/plugin.json          Claude Code manifest
-  .mcp.json                           Claude Code: eager servers
-  mcp-plugins/mcp-warehouse-analyst-pack/
-                                      Claude Code: uniquely named opt-in companion
-  mcp/kiro-mcp.json                   Kiro: all servers, opt-in ones `disabled: true`
-  mcp/warehouse.json                  plain shape, any other tool
-  quick/*.quick                       Amazon Quick: hoisted frontmatter
-.claude-plugin/marketplace.json       generated
-.agents/plugins/marketplace.json      generated — Codex reads this
+├── skills/                         portable, resolved skills
+├── agents/
+│   ├── eng-software-engineer.md    Claude Code
+│   ├── codex/*.toml                Codex
+│   ├── kiro/*.json                 Kiro
+│   ├── quick/*.json                Amazon Quick
+│   └── manifest.json               cross-host names and grants
+├── .claude-plugin/plugin.json      Claude Code plugin manifest
+├── .mcp.json                       eager Claude Code MCP servers
+├── mcp-plugins/                    opt-in Claude Code MCP companions
+├── mcp/kiro-mcp.json               Kiro MCP configuration
+└── quick/*.quick                   Amazon Quick skill variants
 ```
 
-Both marketplaces are **generated**. Hand-kept, they drift from each other and from what the build
-emits — and a stale entry fails at *install* time, not build time.
+For a vertical pack:
 
-`dist/` is generated but intentionally checked in: Claude Code and Codex install from the pushed
-repository, where no build command runs before the marketplace resolves those paths.
+```text
+dist/vertical-software-engineering-engineer/
+├── skills/                         resolved vertical skills
+└── .claude-plugin/plugin.json      marketplace/package metadata
+```
 
-## Distributing it
+Vertical packs intentionally contain no agents or MCP configuration. Those are persona-level
+concerns and remain in the base pack. Amazon Quick vertical variants are not emitted today; Quick
+receives eligible base-pack `.quick` skills and base-pack agent JSON through manual import.
 
-Push the repo. Two of the four hosts install from it directly:
+The build also regenerates both repository marketplaces:
+
+```text
+.claude-plugin/marketplace.json     Claude Code
+.agents/plugins/marketplace.json    Codex
+```
+
+## Quality gates
+
+Run the complete release check with:
 
 ```bash
-claude plugin marketplace add <owner>/<repo>   && claude plugin install analyst-pack
-codex  plugin marketplace add <owner>/<repo>   && codex  plugin add analyst-pack@<repo>
-python3 -m skillforge install --persona analyst --vertical pci-dss   # Kiro
+python3 -m skillforge build --all --vertical all
+python3 -m skillforge validate
+python3 -m skillforge eval
+python3 -m skillforge mutate-test
+python3 -m unittest discover -s tests -v
 ```
 
-The marketplaces point at `dist/`, never the repo root — a skill with conditional blocks resolves
-only at build time, so installing the source tree delivers every persona's contradictory
-instructions in one file.
+`validate` runs all gates and reports all discovered problems in one pass:
 
-**Amazon Quick is a manual import**, and there is one fact worth putting on a sticky note: Quick reads
-its skills **only at launch**, so between importing and relaunching the skill is installed and dead.
+| Gate | What it protects |
+|---|---|
+| `harness-instructions` | Shared repository instructions and synchronized host adapters |
+| `skills` | Skill names, frontmatter, activation descriptions, and format limits |
+| `conditional-blocks` | Complete, well-formed persona branches in every shipped text file |
+| `personas` | Unique packs and prefixes, valid routers, skill inventories, and vertical separation |
+| `agents` | Canonical agents, inclusion, unique generated names, and four explicit grant shapes |
+| `mcp` | Derived entitlement, safe loading mode, usable server definitions, and vertical boundaries |
+| `eval-cases` | Complete trigger and non-trigger cases for Claude Code, Codex, and Kiro |
+| `cross-host-collisions` | Names that would flatten onto the same installed skill or agent |
+| `built-packs` | The generated files, manifests, references, grants, marketplaces, and install sets |
 
-Quick also can't be spec-conformant — it wants `display_name`, `icon` and `trigger` as top-level
-frontmatter, which the Agent Skills validator rejects. So they live under `metadata.quick_*` and are
-hoisted into a separate `.quick` artefact. A skill carrying conditional blocks is **refused**, not
-resolved: Quick has no persona concept, so choosing would ship one persona's boundaries to whoever
-imports the folder.
+`eval` executes the checked-in deterministic routing matrix in
+`evals/skillforge-authoring.json`.
 
-## Installing safely
+`mutate-test` creates an isolated project for every validator, injects a representative defect,
+and fails if the corresponding gate does not catch it.
 
-Three rules the installer keeps, because breaking them destroys someone's setup:
+The unit suite covers authoring workflows, exact pack inventories, host-native agent formats,
+marketplace agreement, Kiro and Codex reconciliation, MCP adoption and restoration, recorded
+updates, Windows copy mode, and reproducible builds. GitHub Actions runs the suite on Linux,
+macOS, and Windows.
 
-**Personas swap.** Installing one removes the other, including vertical variants built for the old
-persona.
-
-**Verticals add.** Select any number alongside the persona by repeating `--vertical`:
+Optional live host validators can be enabled when the native CLIs are installed:
 
 ```bash
-python3 -m skillforge install --persona analyst \
-  --vertical pci-dss \
-  --vertical another-domain
+SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 \
+  python3 -m unittest discover -s tests -p 'test_external_validators.py' -v
 ```
 
-Use `--vertical all` to install every built vertical that declares the selected persona.
+## Install a persona and vertical
 
-**Your own MCP servers are never deleted.** Entries this tool created are marked and only those are
-removed. One that existed already is *adopted* — marked separately and restored to its original
-enabled state when the persona changes or on uninstall. A tool that prints "your own were left
-alone" and isn't telling the truth is worse than one that says nothing.
+Build and validate before installation:
 
-On macOS and Linux, Kiro skills are symlinked by default. On Windows they are copied by default, so
-Developer Mode or administrator symlink privileges are not required. Use `--copy` or `--symlink` to
-override the platform default. The mode actually used is recorded for later updates.
+```bash
+python3 -m skillforge build --all --vertical all
+python3 -m skillforge validate
+```
 
-Kiro agent JSON is reconciled with the selected persona. With `--host all`, Codex agent TOML and a
-marked registration block in its `config.toml` are reconciled too. Generated agent files are tracked
-by hash: a user-owned collision is skipped, and a user-modified managed file is preserved rather
-than overwritten or deleted. Claude Code agents travel inside the plugin; Quick agents remain a
-manual JSON import.
+The examples below select the software-engineer persona and its software-engineering vertical.
 
-## Updating an installation
+### Claude Code
 
-Every successful install writes a non-secret receipt to `.skillforge/install.json`. The directory is
-gitignored, so the selection survives a pull without being committed. It records the persona,
-verticals, install mode, output directory, marketplace name, version, and the resolved Kiro and
-Codex paths: Kiro skills, agents, and MCP config; Codex agents and config. Use `--state <path>` on
-both `install` and `update` to keep it elsewhere. Version 1 receipts are migrated when read.
+```bash
+claude plugin marketplace add aws-samples/sample-skillforge
+claude plugin install engineer-pack@skillforge
+claude plugin install vertical-software-engineering-engineer@skillforge
+```
 
-Inspect the recorded selection without changing anything:
+### Codex
+
+```bash
+codex plugin marketplace add aws-samples/sample-skillforge
+codex plugin add engineer-pack@skillforge
+codex plugin add vertical-software-engineering-engineer@skillforge
+```
+
+### Kiro
+
+```bash
+python3 -m skillforge install \
+  --persona engineer \
+  --vertical software-engineering
+```
+
+Kiro has no repository marketplace, so Skillforge reconciles its skills, agents, and MCP settings
+locally. On macOS and Linux, managed skills are symlinked by default. On Windows, they are copied by
+default so Developer Mode or administrator symlink privileges are not required. Use `--copy` or
+`--symlink` to override the default.
+
+To also reconcile Codex custom-agent files and record native Claude Code/Codex updates, use:
+
+```bash
+python3 -m skillforge install \
+  --host all \
+  --persona engineer \
+  --vertical software-engineering
+```
+
+The installer never deletes an MCP server that the user created. Existing entries are adopted,
+marked separately, and restored to their original enabled state when they leave the selection or
+when Skillforge is uninstalled.
+
+### Amazon Quick
+
+Import eligible `.quick` files and agent JSON manually from the selected base pack:
+
+```text
+dist/engineer-pack/quick/
+dist/engineer-pack/agents/quick/
+```
+
+Quit and relaunch Amazon Quick after importing. Quick reads these skills only at launch.
+
+## Recorded, cross-platform updates
+
+Every successful local install writes a non-secret receipt to:
+
+```text
+.skillforge/install.json
+```
+
+The receipt records the persona, selected verticals, host mode, copy/symlink mode, version,
+marketplace name, and resolved Kiro and Codex paths. The directory is gitignored, so the user's
+selection survives a pull without being committed.
+
+Inspect the recorded selection:
 
 ```bash
 python3 -m skillforge update --check
 ```
 
-Pull, rebuild, validate, and reconcile the same installation:
+Pull with fast-forward-only safety, rebuild every pack, run validation, and replay the selection:
 
 ```bash
 # macOS / Linux
@@ -216,104 +317,68 @@ Pull, rebuild, validate, and reconcile the same installation:
 .\scripts\update.ps1
 ```
 
-Both scripts use `git pull --ff-only`, so local changes or a diverged branch stop the update rather
-than creating an automatic merge. The Python command can also be run directly after a manual pull:
+Or run the Python command after pulling manually:
 
 ```bash
 python3 -m skillforge update
 ```
 
-Kiro is reapplied automatically, including copy-mode Windows installations and MCP reconciliation.
-When the receipt was created with the explicit `--host all` option, the updater also refreshes or
-installs the recorded Claude Code and Codex plugins through their native CLIs. Pass `--no-native` to
-print those commands without running them. Published plugin changes should also bump
-`skillforge.json`'s version so native plugin caches recognize the release.
+If the receipt was created with `--host all`, the update also refreshes native Claude Code and
+Codex plugins when those CLIs are available. Use `--no-native` to print the commands without
+executing them.
 
-## Getting started
+## Author with Claude Code, Codex, or Kiro
 
-```bash
-git clone <this repo> && cd skillforge
-python3 -m skillforge sync-harness --check
-python3 -m skillforge build --all --vertical all
-python3 -m skillforge validate
-python3 -m skillforge eval
-python3 -m skillforge mutate-test
-python3 -m unittest discover -s tests -v
-```
+The repository gives all three coding harnesses the same authoring procedure:
 
-The checked-in examples now include four personas (`analyst`, `auditor`, `project-manager`, and
-`engineer`), two agents, one constraint family, three verticals, nine skills, and two MCP groups.
-The project manager pairs with `project-delivery`; the engineer pairs with `software-engineering`:
+- `AGENTS.md` is the canonical repository instruction file for Codex and Kiro.
+- `CLAUDE.md` imports `AGENTS.md` for Claude Code.
+- `harness/skills/skillforge-authoring/` is the canonical authoring skill.
+- `.agents/skills/`, `.claude/skills/`, and `.kiro/skills/` contain generated host copies.
 
-```bash
-python3 -m skillforge install --persona project-manager --vertical project-delivery
-python3 -m skillforge install --persona engineer --vertical software-engineering
-```
-
-They are examples to adapt or delete once you have your own content.
-
-## Authoring with Codex, Claude Code or Kiro
-
-The repository keeps one short instruction source in `AGENTS.md`. Claude Code imports it through
-`CLAUDE.md`; Codex and Kiro read it directly.
-
-Persona and vertical procedures live in the canonical
-`harness/skills/skillforge-authoring/` skill. Generated copies are checked in under:
-
-```
-.agents/skills/skillforge-authoring/   Codex
-.claude/skills/skillforge-authoring/   Claude Code
-.kiro/skills/skillforge-authoring/     Kiro
-```
-
-Kiro's default agent discovers the workspace skill automatically. If a project uses a custom Kiro
-agent, add `skill://.kiro/skills/skillforge-authoring/SKILL.md` to that agent's `resources` list.
-
-Edit only the canonical copy, then synchronize and verify:
+The authoring skill routes persona, vertical, agent, constraint, canonical-skill, and host-contract
+changes to focused references. Edit the canonical copy only, then synchronize it:
 
 ```bash
 python3 -m skillforge sync-harness
 python3 -m skillforge sync-harness --check
 ```
 
-The skill routes persona, vertical, canonical-agent, canonical-skill, and host-contract work to
-focused references so ordinary sessions carry only the short routing instructions.
+Useful authoring references:
 
-## Test layers
+- [Add a persona](harness/skills/skillforge-authoring/references/add-persona.md)
+- [Add a vertical](harness/skills/skillforge-authoring/references/add-vertical.md)
+- [Add an agent and host grants](harness/skills/skillforge-authoring/references/add-agent.md)
+- [Create or review a skill](harness/skills/skillforge-authoring/references/skill-quality.md)
+- [Change host packaging or installation](harness/skills/skillforge-authoring/references/harness-contracts.md)
 
-`python3 -m unittest discover -s tests -v` covers:
+Kiro's default agent discovers the workspace skill automatically. A custom Kiro agent should add
+`skill://.kiro/skills/skillforge-authoring/SKILL.md` to its `resources`.
 
-- adding a persona successfully and rejecting one missing conditional branches;
-- adding a vertical successfully and rejecting base/vertical collisions;
-- exact base and vertical skill inventories;
-- four native agent grant shapes and safe Kiro/Codex agent reconciliation;
-- resolved names, constraints and conditional blocks;
-- compatible-pack and repository-local duplicate-skill detection;
-- Claude Code and Codex marketplace agreement;
-- Kiro MCP and install/swap safety;
-- JSON receipt replay, copy-mode updates, and Windows/Unix update entry points;
-- reproducible builds and synchronized harness instructions.
+## Project layout
 
-`python3 -m skillforge eval` executes the checked-in trigger and non-trigger matrix for Codex,
-Claude Code, and Kiro discovery. `python3 -m skillforge mutate-test` creates an isolated copy for
-each validator, injects one representative defect, and fails if that defect survives its gate.
-
-The official `skills-ref` validator runs automatically when installed. Claude Code's strict plugin
-validator, Codex plugin/install and app-server config checks, Kiro's native agent validator, and
-isolated local-marketplace installs are opt-in external gates:
-
-```bash
-SKILLFORGE_RUN_EXTERNAL_HARNESSES=1 \
-  python3 -m unittest discover -s tests -p 'test_external_validators.py' -v
+```text
+.
+├── skills/                 canonical portable skills
+├── agents/                 canonical agents and per-host grants
+├── policies/
+│   ├── personas/           swappable audience packs
+│   ├── verticals/          additive domain packs
+│   └── constraints/        reusable persona-specific boundaries
+├── mcp/                    server groups and loading/access policy
+├── harness/                canonical repository authoring skill
+├── evals/                  deterministic harness-routing cases
+├── skillforge/             build, validate, install, update, eval, mutation CLI
+├── tests/                  contracts and integration tests
+├── scripts/                POSIX and PowerShell update entry points
+├── docs/diagrams/          lifecycle diagram and editable sources
+└── dist/                   generated, checked-in installable packs
 ```
-
-Host-neutral should-trigger and should-not-trigger cases live in
-`evals/skillforge-authoring.json`; the deterministic runner executes them in CI, while authenticated
-model-backed checks can still be replayed in isolated Codex, Claude Code, and Kiro workspaces.
 
 ## Security
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for security reporting
+instructions.
 
 ## License
 
@@ -321,9 +386,8 @@ This project is licensed under the Apache-2.0 License.
 
 ## Status
 
-**v0.2.0, early.** Working: the model, the build, all four host shapes, both marketplaces, Quick
-variants, generated persona agents with explicit per-host grants, Kiro and Codex agent
-reconciliation, the Kiro installer with persona + vertical reconciliation and MCP adopt/restore,
-shared repository authoring instructions for Codex/Claude Code/Kiro, recorded cross-platform
-updates, executable harness evals, cross-host duplicate detection, a full mutation harness,
-contract tests, and the validator.
+Skillforge is currently version **0.2.0**. Its source model, four host output shapes, generated
+marketplaces, persona agents, Kiro/Codex reconciliation, safe MCP handling, cross-platform update
+receipts, deterministic harness evaluations, collision detection, mutation harness, and CI
+contracts are implemented. The repository remains an early sample intended to be adapted and
+extended.

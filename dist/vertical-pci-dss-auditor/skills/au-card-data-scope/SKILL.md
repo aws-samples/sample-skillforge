@@ -10,7 +10,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: auditor (External auditor)
 > Pack:    vertical-pci-dss-auditor v0.2.0
-> Source:  skill `card-data-scope` @ d4ba273
+> Source:  skill `card-data-scope` @ 9aeadec
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Is it in PCI DSS scope?

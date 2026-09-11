@@ -1,0 +1,51 @@
+SKILLFORGE: ONE CANONICAL LIBRARY -> TESTED PACKS FOR EACH HARNESS
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 1. CONTRIBUTORS DEFINE INTENT                                                │
+│                                                                              │
+│  Data analyst       External auditor     Project manager     Software engineer│
+│  + PCI DSS          + PCI DSS            + project delivery  + software eng. │
+└───────────────┬───────────────┬──────────────────┬──────────────────┬─────────┘
+                └───────────────┴──────────┬───────┴──────────────────┘
+                                          v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 2. CANONICAL SKILLFORGE REPOSITORY — EDIT THIS LAYER                         │
+│                                                                              │
+│ skills/*/SKILL.md        policies/personas/*.json   policies/verticals/*.json│
+│ portable instructions   one swappable base pack   additive domain packs     │
+│                                                                              │
+│ agents/*.json            policies/constraints/*    harness/ + AGENTS.md      │
+│ four explicit grants    shared boundaries         authoring guidance         │
+└─────────────────────────────────────┬────────────────────────────────────────┘
+                                      v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 3. BUILD AND QUALITY PIPELINE                                                │
+│                                                                              │
+│ sync-harness -> build matrix -> validate 9 gates -> harness evals -> tests   │
+│                                                        |                     │
+│                                      mutation tests + Linux/macOS/Windows CI │
+└─────────────────────────────────────┬────────────────────────────────────────┘
+                                      v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 4. GENERATED DISTRIBUTION                                                    │
+│                                                                              │
+│ EXACTLY ONE BASE PERSONA PACK            ZERO OR MORE VERTICAL PACKS          │
+│ analyst | auditor | project-manager      PCI DSS (analyst + auditor)         │
+│ engineer                                 project delivery | software eng.    │
+│                      \                    /                                   │
+│                       +------------------+                                    │
+│                       resolved install set                                   │
+│          prefixed names + injected constraints + no raw profile blocks       │
+└─────────────────────────────────────┬────────────────────────────────────────┘
+                                      v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 5. HOST-SPECIFIC DELIVERY                                                    │
+│                                                                              │
+│ Claude Code          Codex               Kiro                Amazon Quick     │
+│ marketplace plugin  marketplace plugin  local reconciliation manual import  │
+│ Markdown agents     TOML agents         JSON agents + MCP   base .quick+JSON │
+│ MCP companions      sandbox policy      Windows copies      relaunch         │
+└─────────────────────────────────────┬────────────────────────────────────────┘
+                                      v
+        .skillforge/install.json records the user's persona, verticals,
+        paths and mode; update.sh / update.ps1 rebuild and replay the selection.

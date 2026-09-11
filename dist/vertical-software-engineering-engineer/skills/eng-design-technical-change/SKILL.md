@@ -9,7 +9,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: engineer (Software engineer)
 > Pack:    vertical-software-engineering-engineer v0.2.0
-> Source:  skill `design-technical-change` @ d4ba273
+> Source:  skill `design-technical-change` @ 9aeadec
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Design a technical change

@@ -437,6 +437,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\n  marketplaces: .claude-plugin/marketplace.json and "
               f".agents/plugins/marketplace.json ({len(built_packs)} pack(s) + companions)")
     except model.ModelError as exc:
-        print(f"\n✗ {exc}", file=sys.stderr)
+        print(f"\nERROR: {exc}", file=sys.stderr)
         return 1
     return 0

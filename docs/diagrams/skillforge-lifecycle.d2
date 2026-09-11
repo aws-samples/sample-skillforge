@@ -1,0 +1,100 @@
+direction: down
+
+authors: "1. Contributors define intent" {
+  style: {
+    fill: "#EEF4FF"
+    stroke: "#3578E5"
+    border-radius: 14
+  }
+  analyst: "Data analyst\npersona + PCI DSS"
+  auditor: "External auditor\npersona + PCI DSS"
+  project_manager: "Project manager\npersona + project delivery"
+  engineer: "Software engineer\npersona + software engineering"
+}
+
+source: "2. Canonical Skillforge repository" {
+  style: {
+    fill: "#FFFFFF"
+    stroke: "#64748B"
+    border-radius: 14
+  }
+  skills: "skills/*/SKILL.md\nportable instructions"
+  personas: "policies/personas/*.json\none swappable base persona"
+  verticals: "policies/verticals/*.json\nadditive domain packs"
+  agents: "agents/*.json\ninstructions + four host grants"
+  policy: "constraints/ + harness/\nshared policy + authoring guidance"
+}
+
+quality: "3. Build and quality pipeline" {
+  direction: right
+  style: {
+    fill: "#F0FDFA"
+    stroke: "#0F9D8A"
+    border-radius: 14
+  }
+  sync: "sync-harness --check"
+  build: "build --all --vertical all"
+  validate: "validate\nnine source and pack gates"
+  eval: "eval\nClaude Code, Codex, Kiro routing"
+  tests: "mutate-test + unit tests\nLinux, macOS, Windows"
+  sync -> build -> validate -> eval -> tests
+}
+
+distribution: "4. Generated distribution" {
+  style: {
+    fill: "#FFF7E6"
+    stroke: "#F59E0B"
+    border-radius: 14
+  }
+  base: "Exactly one base persona pack\nanalyst | auditor | project-manager | engineer"
+  verticals: "Zero or more compatible vertical packs\nPCI DSS | project delivery | software engineering"
+  resolved: "Resolved install set\nprefixed names + constraints + no raw profile blocks"
+  base -> resolved
+  verticals -> resolved
+}
+
+hosts: "5. Host-specific delivery" {
+  direction: right
+  style: {
+    fill: "#F5F3FF"
+    stroke: "#7A5AF8"
+    border-radius: 14
+  }
+  claude: "Claude Code\nmarketplace + Markdown agents + MCP companions"
+  codex: "Codex\nmarketplace + TOML agents + sandbox policy"
+  kiro: "Kiro\nlocal reconcile + JSON agents + MCP\nWindows copies by default"
+  quick: "Amazon Quick\nmanual base-pack .quick + JSON import\nrelaunch required"
+}
+
+receipt: ".skillforge/install.json\nupdate.sh and update.ps1 replay the recorded selection" {
+  style: {
+    fill: "#172B4D"
+    stroke: "#172B4D"
+    font-color: "#FFFFFF"
+    border-radius: 12
+  }
+}
+
+authors.analyst -> source.personas
+authors.auditor -> source.personas
+authors.project_manager -> source.personas
+authors.engineer -> source.personas
+authors.analyst -> source.verticals
+authors.auditor -> source.verticals
+authors.project_manager -> source.verticals
+authors.engineer -> source.verticals
+
+source.skills -> quality.sync
+source.personas -> quality.sync
+source.verticals -> quality.sync
+source.agents -> quality.sync
+source.policy -> quality.sync
+quality.tests -> distribution.base
+quality.tests -> distribution.verticals
+distribution.resolved -> hosts.claude
+distribution.resolved -> hosts.codex
+distribution.resolved -> hosts.kiro
+distribution.base -> hosts.quick
+hosts.claude -> receipt
+hosts.codex -> receipt
+hosts.kiro -> receipt

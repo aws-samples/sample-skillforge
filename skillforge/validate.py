@@ -807,10 +807,10 @@ def main(argv: list[str] | None = None) -> int:
     for w in r.warnings:
         print(f"  warning: {w}")
     if r.errors:
-        print(f"\n✗ {len(r.errors)} problem(s):", file=sys.stderr)
+        print(f"\nERROR: {len(r.errors)} problem(s):", file=sys.stderr)
         for e in r.errors:
             print(f"  - {e}", file=sys.stderr)
         return 1
-    print(f"✓ all gates pass"
+    print(f"OK: all gates pass"
           + (f" ({len(r.warnings)} warning(s), advisory)" if r.warnings else ""))
     return 0

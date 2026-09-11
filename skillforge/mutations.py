@@ -201,9 +201,9 @@ def main(argv: list[str] | None = None) -> int:
             failures += 1
             print(f"        {detail}", file=sys.stderr)
     if failures:
-        print(f"\n✗ {failures} mutation(s) escaped or failed incorrectly", file=sys.stderr)
+        print(f"\nERROR: {failures} mutation(s) escaped or failed incorrectly", file=sys.stderr)
         return 1
-    print("\n✓ every validation gate rejected its mutation")
+    print("\nOK: every validation gate rejected its mutation")
     return 0
 
 

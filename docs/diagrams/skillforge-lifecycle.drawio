@@ -1,0 +1,146 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="skillforge-lifecycle" name="Skillforge lifecycle">
+    <mxGraphModel dx="1400" dy="1550" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="1550" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Skillforge — one canonical library, tested packs for every harness" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#172B4D;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="70" y="35" width="1180" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Personas swap. Verticals add. Every generated artefact is validated before installation." style="text;html=1;strokeColor=none;fillColor=none;fontSize=15;fontColor=#52647A;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="70" y="80" width="1100" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="authors-group" value="1  CONTRIBUTORS DEFINE INTENT" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#C7D7FE;fillColor=#F8FAFF;fontColor=#2459B3;fontStyle=1;fontSize=15;verticalAlign=top;align=left;spacingTop=16;spacingLeft=20;" vertex="1" parent="1">
+          <mxGeometry x="70" y="130" width="1260" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="author-analyst" value="&lt;b&gt;Data analyst&lt;/b&gt;&lt;br&gt;persona + PCI DSS" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#3578E5;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="105" y="195" width="270" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="author-auditor" value="&lt;b&gt;External auditor&lt;/b&gt;&lt;br&gt;persona + PCI DSS" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#7A5AF8;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="410" y="195" width="270" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="author-pm" value="&lt;b&gt;Project manager&lt;/b&gt;&lt;br&gt;persona + project delivery" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#F59E0B;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="715" y="195" width="270" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="author-engineer" value="&lt;b&gt;Software engineer&lt;/b&gt;&lt;br&gt;persona + software engineering" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="195" width="270" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repo-group" value="2  CANONICAL SKILLFORGE REPOSITORY — EDIT THIS LAYER" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#172B4D;fillColor=#FFFFFF;fontColor=#FFFFFF;fontStyle=1;fontSize=15;verticalAlign=top;align=left;spacingTop=16;spacingLeft=20;labelBackgroundColor=#172B4D;" vertex="1" parent="1">
+          <mxGeometry x="70" y="360" width="1260" height="245" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-skills" value="&lt;b&gt;skills/*/SKILL.md&lt;/b&gt;&lt;br&gt;Portable instructions" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#CBD5E1;fillColor=#F8FAFC;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="100" y="445" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-personas" value="&lt;b&gt;policies/personas/*.json&lt;/b&gt;&lt;br&gt;One swappable base persona" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#CBD5E1;fillColor=#F8FAFC;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="345" y="445" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-verticals" value="&lt;b&gt;policies/verticals/*.json&lt;/b&gt;&lt;br&gt;Additive domain packs" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#CBD5E1;fillColor=#F8FAFC;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="590" y="445" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-agents" value="&lt;b&gt;agents/*.json&lt;/b&gt;&lt;br&gt;Instructions + four host grants" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#CBD5E1;fillColor=#F8FAFC;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="835" y="445" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-policy" value="&lt;b&gt;constraints/ + harness/&lt;/b&gt;&lt;br&gt;Policy + authoring guidance" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#CBD5E1;fillColor=#F8FAFC;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="445" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="quality-group" value="3  BUILD AND QUALITY PIPELINE" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#99E2D8;fillColor=#F0FDFA;fontColor=#087A6B;fontStyle=1;fontSize=15;verticalAlign=top;align=left;spacingTop=16;spacingLeft=20;" vertex="1" parent="1">
+          <mxGeometry x="70" y="650" width="1260" height="225" as="geometry" />
+        </mxCell>
+        <mxCell id="gate-sync" value="&lt;b&gt;1  Sync&lt;/b&gt;&lt;br&gt;Harness copies match" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="105" y="725" width="205" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="gate-build" value="&lt;b&gt;2  Build&lt;/b&gt;&lt;br&gt;All personas + verticals" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="345" y="725" width="205" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="gate-validate" value="&lt;b&gt;3  Validate&lt;/b&gt;&lt;br&gt;Nine source + pack gates" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="585" y="725" width="205" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="gate-eval" value="&lt;b&gt;4  Eval&lt;/b&gt;&lt;br&gt;Claude, Codex, Kiro routes" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="825" y="725" width="205" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="gate-tests" value="&lt;b&gt;5  Prove&lt;/b&gt;&lt;br&gt;Mutations + tests on 3 OSes" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#FFFFFF;fontColor=#172B4D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1065" y="725" width="205" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dist-base" value="4A  EXACTLY ONE BASE PERSONA PACK&lt;br&gt;&lt;br&gt;&lt;b&gt;analyst-pack&lt;/b&gt; · &lt;b&gt;auditor-pack&lt;/b&gt;&lt;br&gt;&lt;b&gt;project-manager-pack&lt;/b&gt; · &lt;b&gt;engineer-pack&lt;/b&gt;&lt;br&gt;&lt;br&gt;Skills plus persona-level agents, MCP and host metadata where declared." style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#F59E0B;fillColor=#FFF7E6;fontColor=#7C4A03;fontSize=14;align=left;verticalAlign=top;spacingTop=18;spacingLeft=20;" vertex="1" parent="1">
+          <mxGeometry x="70" y="920" width="575" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="dist-plus" value="+" style="text;html=1;strokeColor=none;fillColor=none;fontSize=34;fontStyle=1;fontColor=#F59E0B;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1000" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dist-vertical" value="4B  ZERO OR MORE COMPATIBLE VERTICAL PACKS&lt;br&gt;&lt;br&gt;&lt;b&gt;PCI DSS&lt;/b&gt; → analyst + auditor&lt;br&gt;&lt;b&gt;Project delivery&lt;/b&gt; → project manager&lt;br&gt;&lt;b&gt;Software engineering&lt;/b&gt; → engineer&lt;br&gt;&lt;br&gt;Skills-only add-ons; no agents or MCP are duplicated." style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#F59E0B;fillColor=#FFF7E6;fontColor=#7C4A03;fontSize=14;align=left;verticalAlign=top;spacingTop=18;spacingLeft=20;" vertex="1" parent="1">
+          <mxGeometry x="755" y="920" width="575" height="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="host-claude" value="&lt;b&gt;CLAUDE CODE&lt;/b&gt;&lt;br&gt;Marketplace plugin&lt;br&gt;Markdown agents&lt;br&gt;MCP companions" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#7A5AF8;fillColor=#F5F3FF;fontColor=#3D2D86;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1210" width="285" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="host-codex" value="&lt;b&gt;CODEX&lt;/b&gt;&lt;br&gt;Marketplace plugin&lt;br&gt;TOML agents&lt;br&gt;Sandbox + web policy" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#3578E5;fillColor=#EEF4FF;fontColor=#2459B3;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="395" y="1210" width="285" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="host-kiro" value="&lt;b&gt;KIRO&lt;/b&gt;&lt;br&gt;Local reconciliation&lt;br&gt;JSON agents + MCP&lt;br&gt;Windows copies by default" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#0F9D8A;fillColor=#F0FDFA;fontColor=#087A6B;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="720" y="1210" width="285" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="host-quick" value="&lt;b&gt;AMAZON QUICK&lt;/b&gt;&lt;br&gt;Manual import&lt;br&gt;Base-pack .quick + JSON agents&lt;br&gt;Quit and relaunch" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;strokeColor=#E05A47;fillColor=#FFF2F0;fontColor=#963B2F;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1045" y="1210" width="285" height="145" as="geometry" />
+        </mxCell>
+
+        <mxCell id="receipt" value="&lt;b&gt;RECORDED, REPEATABLE UPDATES&lt;/b&gt;   .skillforge/install.json stores persona, verticals, paths and install mode   →   update.sh / update.ps1 pull, rebuild, validate and replay the same selection" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;strokeColor=#172B4D;fillColor=#172B4D;fontColor=#FFFFFF;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1410" width="1260" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-author-repo-1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="author-analyst" target="repo-personas">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-author-repo-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="author-auditor" target="repo-personas">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-author-repo-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="author-pm" target="repo-verticals">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-author-repo-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#94A3B8;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="author-engineer" target="repo-agents">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-repo-quality" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F9D8A;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="repo-group" target="quality-group">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-gate-1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#0F9D8A;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="gate-sync" target="gate-build">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-gate-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#0F9D8A;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="gate-build" target="gate-validate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-gate-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#0F9D8A;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="gate-validate" target="gate-eval">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-gate-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#0F9D8A;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="gate-eval" target="gate-tests">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-quality-base" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F59E0B;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="quality-group" target="dist-base">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-quality-vertical" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F59E0B;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="quality-group" target="dist-vertical">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-base-claude" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#7A5AF8;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="dist-base" target="host-claude">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-base-codex" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#3578E5;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="dist-base" target="host-codex">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-vertical-kiro" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#0F9D8A;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="dist-vertical" target="host-kiro">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-base-quick" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#E05A47;strokeWidth=2;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="dist-base" target="host-quick">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-host-receipt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#172B4D;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="host-kiro" target="receipt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

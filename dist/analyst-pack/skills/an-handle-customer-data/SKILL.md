@@ -9,7 +9,7 @@ metadata:
 > Generated file — do not edit.
 > Persona: analyst (Data analyst)
 > Pack:    analyst-pack v0.2.0
-> Source:  skill `handle-customer-data` @ d4ba273
+> Source:  skill `handle-customer-data` @ 9aeadec
 > Edit the source skill, not this copy — this one is overwritten on every build.
 
 # Handling customer data

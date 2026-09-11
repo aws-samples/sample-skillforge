@@ -1,0 +1,78 @@
+flowchart TB
+    subgraph AUTHORS["1. Contributors define intent"]
+        AN["Data analyst<br/>persona + PCI DSS"]
+        AU["External auditor<br/>persona + PCI DSS"]
+        PM["Project manager<br/>persona + project delivery"]
+        EN["Software engineer<br/>persona + software engineering"]
+    end
+
+    subgraph SOURCE["2. Canonical Skillforge repository"]
+        SK["skills/*/SKILL.md<br/>portable instructions"]
+        PE["policies/personas/*.json<br/>one swappable base persona"]
+        VE["policies/verticals/*.json<br/>additive domain packs"]
+        AG["agents/*.json<br/>instructions + four host grants"]
+        CO["constraints/ + harness/<br/>shared policy + authoring guidance"]
+    end
+
+    subgraph QUALITY["3. Build and quality pipeline"]
+        SYNC["sync-harness --check"]
+        BUILD["build --all --vertical all"]
+        VALIDATE["validate<br/>nine source and pack gates"]
+        EVAL["eval<br/>Claude Code, Codex, Kiro routing"]
+        TEST["mutate-test + unit tests<br/>Linux, macOS, Windows"]
+        SYNC --> BUILD --> VALIDATE --> EVAL --> TEST
+    end
+
+    subgraph DIST["4. Generated distribution"]
+        BASE["Exactly one base persona pack<br/>analyst | auditor | project-manager | engineer"]
+        VERTICAL["+ zero or more compatible vertical packs<br/>PCI DSS | project delivery | software engineering"]
+        RESOLVED["Resolved install set<br/>prefixed names + injected constraints + no raw profile blocks"]
+        BASE --> RESOLVED
+        VERTICAL --> RESOLVED
+    end
+
+    subgraph HOSTS["5. Host-specific delivery"]
+        CLAUDE["Claude Code<br/>marketplace plugin + Markdown agents + MCP companions"]
+        CODEX["Codex<br/>marketplace plugin + TOML agents + sandbox policy"]
+        KIRO["Kiro<br/>local reconcile + JSON agents + MCP<br/>copies by default on Windows"]
+        QUICK["Amazon Quick<br/>manual base-pack .quick and JSON import<br/>relaunch after import"]
+    end
+
+    RECEIPT[".skillforge/install.json records the selection<br/>update.sh and update.ps1 pull, rebuild, validate, and replay it"]
+
+    AN --> PE
+    AU --> PE
+    PM --> PE
+    EN --> PE
+    AN --> VE
+    AU --> VE
+    PM --> VE
+    EN --> VE
+    SK --> SYNC
+    PE --> SYNC
+    VE --> SYNC
+    AG --> SYNC
+    CO --> SYNC
+    TEST --> BASE
+    TEST --> VERTICAL
+    RESOLVED --> CLAUDE
+    RESOLVED --> CODEX
+    RESOLVED --> KIRO
+    BASE --> QUICK
+    CLAUDE --> RECEIPT
+    CODEX --> RECEIPT
+    KIRO --> RECEIPT
+
+    classDef persona fill:#EEF4FF,stroke:#3578E5,color:#172B4D,stroke-width:2px;
+    classDef source fill:#FFFFFF,stroke:#64748B,color:#172B4D,stroke-width:1.5px;
+    classDef gate fill:#F0FDFA,stroke:#0F9D8A,color:#172B4D,stroke-width:1.5px;
+    classDef pack fill:#FFF7E6,stroke:#F59E0B,color:#172B4D,stroke-width:1.5px;
+    classDef host fill:#F5F3FF,stroke:#7A5AF8,color:#172B4D,stroke-width:1.5px;
+    classDef receipt fill:#172B4D,stroke:#172B4D,color:#FFFFFF,stroke-width:1.5px;
+
+    class AN,AU,PM,EN persona;
+    class SK,PE,VE,AG,CO source;
+    class SYNC,BUILD,VALIDATE,EVAL,TEST gate;
+    class BASE,VERTICAL,RESOLVED pack;
+    class CLAUDE,CODEX,KIRO,QUICK host;
+    class RECEIPT receipt;
